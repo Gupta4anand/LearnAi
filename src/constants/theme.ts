@@ -25,6 +25,15 @@ export const Colors = {
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
   },
+  learnAI: {
+    background: '#0F172A',
+    inputBg: '#1E293B',
+    placeholder: '#94A3B8',
+    text: '#FFFFFF',
+    primaryGradient: ['#4A6EDB', '#6C8DF5'] as const,
+    accent: '#6C8DF5',
+    error: '#EF4444',
+  }
 };
 
 export const Fonts = Platform.select({
