@@ -14,6 +14,7 @@ import { Image } from 'expo-image';
 import { useRouter, Stack } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LegendList } from '@legendapp/list';
 import { Colors } from '@/constants/theme';
 import { courseService } from '@/services/api';
 import { useCourseStore } from '@/store/courseStore';
@@ -23,7 +24,7 @@ const CATEGORIES = ['All', 'Popular', 'New', 'Trending', 'Advanced', 'Beginner']
 
 export default function SeeAllCoursesScreen() {
   const router = useRouter();
-  const { toggleBookmark, isBookmarked } = useCourseStore();
+  const { bookmarks, toggleBookmark, isBookmarked } = useCourseStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
@@ -91,9 +92,9 @@ export default function SeeAllCoursesScreen() {
           style={styles.bookmarkBtn}
         >
           <Ionicons 
-            name={isBookmarked(item.id) ? "bookmark" : "bookmark-outline"} 
+            name={bookmarks.some(b => String(b.id) === String(item.id)) ? "bookmark" : "bookmark-outline"} 
             size={22} 
-            color={isBookmarked(item.id) ? Colors.learnAI.accent : "#94A3B8"} 
+            color={bookmarks.some(b => String(b.id) === String(item.id)) ? Colors.learnAI.accent : "#94A3B8"} 
           />
         </TouchableOpacity>
       </TouchableOpacity>
@@ -153,14 +154,13 @@ export default function SeeAllCoursesScreen() {
         {coursesLoading ? (
           <ActivityIndicator color={Colors.learnAI.accent} size="large" style={{ marginTop: 50 }} />
         ) : (
-          <FlatList
+          <LegendList
             data={filteredCourses}
             renderItem={renderItem}
             keyExtractor={(item, index) => `${item.id}-${index}`}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
-            initialNumToRender={10}
-            windowSize={5}
+            estimatedItemSize={moderateScale(100)}
             ListEmptyComponent={
               <View style={styles.emptyState}>
                 <Ionicons name="search-outline" size={60} color="#1E293B" />

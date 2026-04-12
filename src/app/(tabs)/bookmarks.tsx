@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { LegendList } from '@legendapp/list';
 import { Colors } from '@/constants/theme';
 import { useCourseStore, Course } from '@/store/courseStore';
 import { moderateScale, fontScale, Layout } from '@/utils/responsive';
@@ -76,13 +77,14 @@ export default function BookmarksScreen() {
           <Text style={styles.headerSubtitle}>Saved courses for later</Text>
         </View>
 
-        <FlatList
+        <LegendList
           data={bookmarks}
           renderItem={renderItem}
           keyExtractor={(item, index) => `${item.id}-${index}`}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={EmptyState}
           showsVerticalScrollIndicator={false}
+          estimatedItemSize={moderateScale(100)}
         />
       </SafeAreaView>
     </View>
