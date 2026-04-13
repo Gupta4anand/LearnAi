@@ -1,4 +1,5 @@
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { initializeNetworkMonitoring } from '@/services/network';
 import { registerForPushNotificationsAsync } from '@/services/notifications';
 import { useAuthStore } from '@/store/authStore';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -29,14 +30,16 @@ export default function RootLayout() {
   const initializeAuth = useAuthStore((state) => state.initialize);
 
   useEffect(() => {
+    const unsubscribeNetwork = initializeNetworkMonitoring();
     initializeAuth();
 
     if (Constants.appOwnership === 'expo') {
       console.warn('Expo Go does not support full expo-notifications functionality. Use a development build to test notifications.');
-      return;
+      return () => unsubscribeNetwork();
     }
 
     registerForPushNotificationsAsync();
+    return () => unsubscribeNetwork();
   }, []);
 
   return (

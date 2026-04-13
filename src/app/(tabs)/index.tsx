@@ -1,14 +1,16 @@
 import { Colors } from '@/constants/theme';
 import { courseService } from '@/services/api';
+import { useContentStore } from '@/store/contentStore';
 import { useAuthStore } from '@/store/authStore';
 import { useCourseStore } from '@/store/courseStore';
+import { useNetworkStore } from '@/store/networkStore';
 import { Layout, moderateScale } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Animated as RNAnimated,
     ScrollView,
@@ -26,9 +28,12 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { bookmarks, toggleBookmark } = useCourseStore();
+  const { cachedCourses, cachedInstructors, lastCatalogSyncAt, setCatalogCache } = useContentStore();
+  const { isConnected, isInternetReachable } = useNetworkStore();
   const scrollX = useRef(new RNAnimated.Value(0)).current;
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const isOffline = isConnected === false || isInternetReachable === false;
   const displayName = user?.username 
     ? user.username.charAt(0).toUpperCase() + user.username.slice(1) 
     : 'Scholar';
@@ -42,6 +47,7 @@ export default function DashboardScreen() {
   } = useQuery({
     queryKey: ['courses'],
     queryFn: () => courseService.getRandomProducts(),
+    enabled: !isOffline,
   });
 
   const { 
@@ -52,11 +58,27 @@ export default function DashboardScreen() {
   } = useQuery({
     queryKey: ['instructors'],
     queryFn: () => courseService.getRandomUsers(),
+    enabled: !isOffline,
   });
+
+  useEffect(() => {
+    const nextCourses = (courses as any)?.data?.data;
+    const nextInstructors = (instructors as any)?.data?.data;
+
+    if ((Array.isArray(nextCourses) && nextCourses.length > 0) || (Array.isArray(nextInstructors) && nextInstructors.length > 0)) {
+      setCatalogCache({
+        courses: nextCourses,
+        instructors: nextInstructors,
+      });
+    }
+  }, [courses, instructors, setCatalogCache]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
+      if (isOffline) {
+        return;
+      }
       await Promise.all([refetchCourses(), refetchInstructors()]);
     } finally {
       setIsRefreshing(false);
@@ -69,8 +91,12 @@ export default function DashboardScreen() {
     (instructorsErrorInfo as any)?.message ||
     'Unable to load content. Check your connection.';
 
-  const courseData = (courses as any)?.data?.data || [];
-  const instructorData = (instructors as any)?.data?.data || [];
+  const liveCourseData = (courses as any)?.data?.data;
+  const liveInstructorData = (instructors as any)?.data?.data;
+  const courseData = Array.isArray(liveCourseData) && liveCourseData.length > 0 ? liveCourseData : cachedCourses;
+  const instructorData =
+    Array.isArray(liveInstructorData) && liveInstructorData.length > 0 ? liveInstructorData : cachedInstructors;
+  const hasCachedCatalog = courseData.length > 0 || instructorData.length > 0;
   const filteredCourses = searchQuery.trim().length
     ? courseData.filter((item: any) =>
         item.title?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -124,13 +150,21 @@ export default function DashboardScreen() {
           }
         >
           {/* Offline/Error Banner */}
-          {hasFetchError && (
-            <View className="mx-6 bg-red-500 rounded-2xl p-4 mb-6">
+          {(isOffline || hasFetchError) && (
+            <View className={`mx-6 rounded-2xl p-4 mb-6 ${hasCachedCatalog ? 'bg-amber-500/20' : 'bg-red-500'}`}>
               <View className="flex-row items-center mb-1">
                 <Ionicons name="cloud-offline-outline" size={20} color="#FFFFFF" />
-                <Text className="text-white text-[15px] font-bold ml-2">Offline Mode</Text>
+                <Text className="text-white text-[15px] font-bold ml-2">
+                  {isOffline ? 'Offline Mode' : 'Connection Issue'}
+                </Text>
               </View>
-              <Text className="text-white/90 text-[13px] leading-4.5">{fetchErrorMessage}</Text>
+              <Text className="text-white/90 text-[13px] leading-4.5">
+                {isOffline
+                  ? hasCachedCatalog
+                    ? `Showing your last saved catalog${lastCatalogSyncAt ? ` from ${new Date(lastCatalogSyncAt).toLocaleString()}` : ''}.`
+                    : 'No saved catalog is available yet. Reconnect to load courses.'
+                  : fetchErrorMessage}
+              </Text>
             </View>
           )}
 
@@ -147,7 +181,7 @@ export default function DashboardScreen() {
             />
           </View>
 
-          {coursesLoading ? (
+          {coursesLoading && !hasCachedCatalog ? (
             <View className="px-6 w-full">
               <View className="w-full h-40 bg-learnAI-inputBg rounded-3xl" />
               <View className="h-3.5 w-[150px] bg-slate-700 rounded my-6" />

@@ -1,13 +1,15 @@
 import { Colors } from '@/constants/theme';
 import { courseService } from '@/services/api';
+import { useContentStore } from '@/store/contentStore';
 import { useCourseStore } from '@/store/courseStore';
+import { useNetworkStore } from '@/store/networkStore';
 import { moderateScale } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { LegendList } from '@legendapp/list';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { Stack, useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     RefreshControl,
@@ -26,23 +28,44 @@ const CATEGORIES = ['All', 'Popular', 'New', 'Trending', 'Advanced', 'Beginner']
 export default function SeeAllCoursesScreen() {
   const router = useRouter();
   const { bookmarks, toggleBookmark } = useCourseStore();
+  const { cachedCourses, cachedInstructors, lastCatalogSyncAt, setCatalogCache } = useContentStore();
+  const { isConnected, isInternetReachable } = useNetworkStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const isOffline = isConnected === false || isInternetReachable === false;
 
   const { data: courses, isLoading: coursesLoading, isError: coursesError, error: coursesErrorInfo, refetch: refetchCourses } = useQuery({
     queryKey: ['courses'],
     queryFn: () => courseService.getRandomProducts(),
+    enabled: !isOffline,
   });
 
   const { data: instructors, isError: instructorsError, error: instructorsErrorInfo, refetch: refetchInstructors } = useQuery({
     queryKey: ['instructors'],
     queryFn: () => courseService.getRandomUsers(),
+    enabled: !isOffline,
   });
 
-  const courseData = (courses as any)?.data?.data || [];
-  const instructorData = (instructors as any)?.data?.data || [];
+  useEffect(() => {
+    const nextCourses = (courses as any)?.data?.data;
+    const nextInstructors = (instructors as any)?.data?.data;
+
+    if ((Array.isArray(nextCourses) && nextCourses.length > 0) || (Array.isArray(nextInstructors) && nextInstructors.length > 0)) {
+      setCatalogCache({
+        courses: nextCourses,
+        instructors: nextInstructors,
+      });
+    }
+  }, [courses, instructors, setCatalogCache]);
+
+  const liveCourseData = (courses as any)?.data?.data;
+  const liveInstructorData = (instructors as any)?.data?.data;
+  const courseData = Array.isArray(liveCourseData) && liveCourseData.length > 0 ? liveCourseData : cachedCourses;
+  const instructorData =
+    Array.isArray(liveInstructorData) && liveInstructorData.length > 0 ? liveInstructorData : cachedInstructors;
+  const hasCachedCatalog = courseData.length > 0 || instructorData.length > 0;
 
   const hasFetchError = coursesError || instructorsError;
   const fetchErrorMessage =
@@ -53,6 +76,9 @@ export default function SeeAllCoursesScreen() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
+      if (isOffline) {
+        return;
+      }
       await Promise.all([refetchCourses(), refetchInstructors()]);
     } finally {
       setIsRefreshing(false);
@@ -140,13 +166,23 @@ export default function SeeAllCoursesScreen() {
         </View>
 
         {/* Offline Alert */}
-        {hasFetchError && (
-          <View className="bg-red-700 rounded-2xl p-4 mx-6 mb-4">
-            <Text className="text-white text-[15px] font-bold mb-1.5">You appear to be offline</Text>
-            <Text className="text-red-100 text-[13px] leading-5 mb-3">{fetchErrorMessage}</Text>
-            <TouchableOpacity className="self-start bg-red-400 rounded-xl py-2.5 px-4" onPress={handleRefresh}>
-              <Text className="text-white text-[14px] font-bold">Retry</Text>
-            </TouchableOpacity>
+        {(isOffline || hasFetchError) && (
+          <View className={`rounded-2xl p-4 mx-6 mb-4 ${hasCachedCatalog ? 'bg-amber-500/20' : 'bg-red-700'}`}>
+            <Text className="text-white text-[15px] font-bold mb-1.5">
+              {isOffline ? 'You are offline' : 'Unable to refresh catalog'}
+            </Text>
+            <Text className="text-red-100 text-[13px] leading-5 mb-3">
+              {isOffline
+                ? hasCachedCatalog
+                  ? `Showing saved catalog${lastCatalogSyncAt ? ` from ${new Date(lastCatalogSyncAt).toLocaleString()}` : ''}.`
+                  : 'No saved courses are available yet. Reconnect to load the catalog.'
+                : fetchErrorMessage}
+            </Text>
+            {!isOffline && (
+              <TouchableOpacity className="self-start bg-red-400 rounded-xl py-2.5 px-4" onPress={handleRefresh}>
+                <Text className="text-white text-[14px] font-bold">Retry</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -188,9 +224,9 @@ export default function SeeAllCoursesScreen() {
         </View>
 
         {/* List */}
-        {coursesLoading ? (
+        {coursesLoading && !hasCachedCatalog ? (
           <ActivityIndicator color={Colors.learnAI.accent} size="large" className="mt-12" />
-        ) : hasFetchError ? (
+        ) : hasFetchError && !hasCachedCatalog ? (
           <View className="items-center mt-14">
             <Ionicons name="wifi-off" size={60} color="#F87171" />
             <Text className="text-white text-lg font-bold mt-4">Unable to Load Courses</Text>

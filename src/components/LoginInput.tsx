@@ -15,14 +15,14 @@ const LoginInput = forwardRef<TextInput, LoginInputProps>(
     return (
       <View className="mb-4 w-full">
         {label && (
-          <Text className="text-slate-400 text-sm mb-2 ml-1 font-medium">
+          <Text className="text-slate-300 text-[13px] mb-2 ml-1 font-semibold tracking-wide">
             {label}
           </Text>
         )}
-        <View className="relative justify-center">
+        <View className="relative justify-center rounded-3xl border border-white/8 bg-white/[0.03] px-[1px] py-[1px]">
           <TextInput
             ref={ref}
-            className={`bg-learnAI-inputBg rounded-2xl px-4 py-3.5 text-white text-base border border-white/5 ${
+            className={`bg-learnAI-inputBg rounded-[23px] px-4 py-4 text-white text-base border border-white/5 ${
               isPassword ? 'pr-12' : ''
             } ${className || ''}`}
             placeholderTextColor={Colors.learnAI.placeholder}

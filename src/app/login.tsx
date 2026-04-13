@@ -11,6 +11,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StatusBar,
   Text,
   TextInput,
@@ -24,12 +25,19 @@ const { width, height } = Layout.window;
 
 export default function LoginScreen() {
   const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
   const passwordRef = useRef<TextInput>(null);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const login = useAuthStore((state) => state.setAuth);
+
+  const scrollToLowerFields = () => {
+    setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 120);
+  };
 
   const handleLogin = async () => {
     if (!email || !password) return Alert.alert('Error', 'Please fill in all fields');
@@ -89,20 +97,38 @@ export default function LoginScreen() {
 
       <SafeAreaView className="flex-1">
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
           className="flex-1"
         >
-          <View className="flex-1 px-6 justify-between py-10">
-            <View className="items-center mt-[15%]">
+          <ScrollView
+            ref={scrollRef}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between', paddingTop: moderateScale(32), paddingBottom: moderateScale(96) }}
+            className="px-6"
+          >
+            <View className="items-center mt-[10%]">
+              <View className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 mb-5">
+                <Text className="text-[11px] font-bold tracking-[2px] text-learnAI-accent uppercase">
+                  AI Learning Platform
+                </Text>
+              </View>
               <Text className="text-5xl font-extrabold text-white tracking-tighter">
                 Learn<Text className="text-learnAI-accent">AI</Text>
               </Text>
-              <Text className="text-slate-400 text-base mt-2 font-medium tracking-wide">
+              <Text className="text-slate-200 text-[26px] mt-3 font-bold text-center">
                 Welcome back
+              </Text>
+              <Text className="text-slate-400 text-center text-[15px] leading-6 mt-3 max-w-[82%]">
+                Continue your AI journey with saved lessons, interactive modules, and progress that follows you everywhere.
               </Text>
             </View>
 
-            <View className="w-full mb-10">
+            <View className="w-full mt-10 mb-8 rounded-[32px] border border-white/8 bg-white/[0.03] px-5 py-6">
+              <Text className="text-white text-xl font-bold">Sign in</Text>
+              <Text className="text-slate-400 text-sm mt-1 mb-5">Access your courses and bookmarks</Text>
+
               <LoginInput
                 label="Email"
                 placeholder="Enter your email"
@@ -110,6 +136,7 @@ export default function LoginScreen() {
                 autoCapitalize="none"
                 keyboardType="email-address"
                 onChangeText={setEmail}
+                onFocus={scrollToLowerFields}
                 returnKeyType="next"
                 onSubmitEditing={() => passwordRef.current?.focus()}
                 blurOnSubmit={false}
@@ -121,12 +148,13 @@ export default function LoginScreen() {
                 value={password}
                 isPassword
                 onChangeText={setPassword}
+                onFocus={scrollToLowerFields}
                 returnKeyType="done"
                 onSubmitEditing={handleLogin}
               />
 
-              <TouchableOpacity className="self-end mb-6">
-                <Text className="text-slate-400 text-sm font-medium">Forgot Password?</Text>
+              <TouchableOpacity className="self-end mb-6 mt-1">
+                <Text className="text-slate-300 text-sm font-semibold">Forgot Password?</Text>
               </TouchableOpacity>
 
               <GradientButton
@@ -142,7 +170,7 @@ export default function LoginScreen() {
                 <Text className="text-learnAI-accent text-[15px] font-bold">Sign Up</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </Animated.View>

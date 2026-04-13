@@ -26,6 +26,7 @@ const { width, height } = Layout.window;
 export default function SignUpScreen() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const scrollRef = useRef<ScrollView>(null);
 
   // Refs for auto-focus flow
   const emailRef = useRef<TextInput>(null);
@@ -38,6 +39,12 @@ export default function SignUpScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const scrollToLowerFields = () => {
+    setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 120);
+  };
 
   const validate = () => {
     let newErrors: { [key: string]: string } = {};
@@ -133,24 +140,38 @@ export default function SignUpScreen() {
 
       <SafeAreaView className="flex-1">
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
           className="flex-1"
         >
           <ScrollView 
+            ref={scrollRef}
             showsVerticalScrollIndicator={false} 
-            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingVertical: moderateScale(40) }}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingTop: moderateScale(40), paddingBottom: moderateScale(120) }}
             className="px-6"
           >
-            <View className="items-center mb-10">
+            <View className="items-center mb-8">
+              <View className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 mb-5">
+                <Text className="text-[11px] font-bold tracking-[2px] text-learnAI-accent uppercase">
+                  Build Your Profile
+                </Text>
+              </View>
               <Text className="text-5xl font-extrabold text-white tracking-tighter">
                 Learn<Text className="text-learnAI-accent">AI</Text>
               </Text>
-              <Text className="text-slate-400 text-base mt-2 font-medium tracking-wide">
+              <Text className="text-slate-300 text-lg mt-3 font-semibold tracking-wide">
                 Create your account
               </Text>
+              {/* <Text className="text-slate-400 text-center text-[15px] leading-6 mt-3 max-w-[88%]">
+                Start with a polished learner profile and unlock interactive AI lessons, course tracking, and smart bookmarks.
+              </Text> */}
             </View>
 
-            <View className="w-full">
+            <View className="w-full rounded-[32px] border border-white/8 bg-white/[0.03] px-5 py-6">
+              <Text className="text-white text-xl font-bold">Create account</Text>
+              <Text className="text-slate-400 text-sm mt-1 mb-5">Set up your learner profile in under a minute</Text>
+
               <LoginInput
                 label="Full Name"
                 placeholder="Enter your name"
@@ -184,6 +205,7 @@ export default function SignUpScreen() {
                 value={password}
                 isPassword
                 onChangeText={setPassword}
+                onFocus={scrollToLowerFields}
                 returnKeyType="next"
                 onSubmitEditing={() => confirmRef.current?.focus()}
                 blurOnSubmit={false}
@@ -197,6 +219,7 @@ export default function SignUpScreen() {
                 value={confirmPassword}
                 isPassword
                 onChangeText={setConfirmPassword}
+                onFocus={scrollToLowerFields}
                 returnKeyType="done"
                 onSubmitEditing={handleSignUp}
               />
