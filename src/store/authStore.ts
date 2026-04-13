@@ -1,10 +1,11 @@
-import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
+import { create } from 'zustand';
 
 interface User {
   id: string;
   email: string;
   username: string;
+  avatar?: string;
 }
 
 interface AuthState {
@@ -13,6 +14,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   setAuth: (user: User, token: string) => Promise<void>;
+  updateProfile: (user: User) => Promise<void>;
   logout: () => Promise<void>;
   initialize: () => Promise<void>;
 }
@@ -27,6 +29,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     await SecureStore.setItemAsync('user_token', token);
     await SecureStore.setItemAsync('user_data', JSON.stringify(user));
     set({ user, token, isAuthenticated: true });
+  },
+
+  updateProfile: async (user) => {
+    const token = await SecureStore.getItemAsync('user_token');
+    if (token) {
+      await SecureStore.setItemAsync('user_data', JSON.stringify(user));
+      set({ user, token, isAuthenticated: true });
+    }
   },
 
   logout: async () => {

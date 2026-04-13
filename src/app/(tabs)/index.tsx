@@ -1,26 +1,25 @@
-import React, { useRef } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  StatusBar,
-  Animated,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '@/constants/theme';
+import { courseService } from '@/services/api';
+import { useAuthStore } from '@/store/authStore';
+import { useCourseStore } from '@/store/courseStore';
+import { fontScale, Layout, moderateScale } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
-import { Colors } from '@/constants/theme';
-import { courseService } from '@/services/api';
-import { useCourseStore } from '@/store/courseStore';
-import { useAuthStore } from '@/store/authStore';
-import { moderateScale, fontScale, verticalScale, Layout } from '@/utils/responsive';
+import React, { useRef } from 'react';
+import {
+    Animated,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -66,7 +65,11 @@ export default function DashboardScreen() {
           </View>
           <TouchableOpacity style={styles.avatarContainer} onPress={() => router.push('/(tabs)/profile')}>
             <View style={styles.avatar}>
-              <Ionicons name="person" size={24} color="#94A3B8" />
+              {typeof user?.avatar === 'string' && user.avatar.length > 0 ? (
+                <Image source={{ uri: user.avatar }} style={styles.avatarImage} contentFit="cover" />
+              ) : (
+                <Ionicons name="person" size={24} color="#94A3B8" />
+              )}
             </View>
           </TouchableOpacity>
         </View>
@@ -267,6 +270,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: moderateScale(44),
+    height: moderateScale(44),
   },
   scrollContent: {
     paddingHorizontal: moderateScale(24),
