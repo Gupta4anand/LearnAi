@@ -1,24 +1,25 @@
-import React, { useState, useMemo } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  StatusBar,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { useRouter, Stack } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LegendList } from '@legendapp/list';
 import { Colors } from '@/constants/theme';
 import { courseService } from '@/services/api';
 import { useCourseStore } from '@/store/courseStore';
-import { moderateScale, fontScale, Layout } from '@/utils/responsive';
+import { fontScale, moderateScale } from '@/utils/responsive';
+import { Ionicons } from '@expo/vector-icons';
+import { LegendList } from '@legendapp/list';
+import { useQuery } from '@tanstack/react-query';
+import { Image } from 'expo-image';
+import { Stack, useRouter } from 'expo-router';
+import React, { useMemo, useState } from 'react';
+import {
+    ActivityIndicator,
+    FlatList,
+    RefreshControl,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CATEGORIES = ['All', 'Popular', 'New', 'Trending', 'Advanced', 'Beginner'];
 
@@ -28,18 +29,35 @@ export default function SeeAllCoursesScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
-  const { data: courses, isLoading: coursesLoading } = useQuery({
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const { data: courses, isLoading: coursesLoading, isError: coursesError, error: coursesErrorInfo, refetch: refetchCourses } = useQuery({
     queryKey: ['courses'],
     queryFn: () => courseService.getRandomProducts(),
   });
 
-  const { data: instructors } = useQuery({
+  const { data: instructors, isError: instructorsError, error: instructorsErrorInfo, refetch: refetchInstructors } = useQuery({
     queryKey: ['instructors'],
     queryFn: () => courseService.getRandomUsers(),
   });
 
   const courseData = (courses as any)?.data?.data || [];
   const instructorData = (instructors as any)?.data?.data || [];
+
+  const hasFetchError = coursesError || instructorsError;
+  const fetchErrorMessage =
+    (coursesErrorInfo as any)?.message ||
+    (instructorsErrorInfo as any)?.message ||
+    'Unable to load content. Check your connection and try again.';
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([refetchCourses(), refetchInstructors()]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const filteredCourses = useMemo(() => {
     return courseData.filter((item: any) => {
@@ -118,6 +136,16 @@ export default function SeeAllCoursesScreen() {
         </View>
 
         {/* Search */}
+        {hasFetchError && (
+          <View style={styles.alertBanner}>
+            <Text style={styles.alertTitle}>You appear to be offline</Text>
+            <Text style={styles.alertText}>{fetchErrorMessage}</Text>
+            <TouchableOpacity style={styles.retryBtn} onPress={handleRefresh}>
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View style={styles.searchBackground}>
           <Ionicons name="search-outline" size={20} color="#94A3B8" style={styles.searchIcon} />
           <TextInput
@@ -153,6 +181,15 @@ export default function SeeAllCoursesScreen() {
         {/* List */}
         {coursesLoading ? (
           <ActivityIndicator color={Colors.learnAI.accent} size="large" style={{ marginTop: 50 }} />
+        ) : hasFetchError ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="wifi-off" size={60} color="#F87171" />
+            <Text style={styles.emptyTitle}>Unable to Load Courses</Text>
+            <Text style={styles.emptySub}>{fetchErrorMessage}</Text>
+            <TouchableOpacity style={styles.retryBtnSecondary} onPress={handleRefresh}>
+              <Text style={styles.retryText}>Try again</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <LegendList
             data={filteredCourses}
@@ -161,6 +198,14 @@ export default function SeeAllCoursesScreen() {
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             estimatedItemSize={moderateScale(100)}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor={Colors.learnAI.accent}
+                colors={[Colors.learnAI.accent]}
+              />
+            }
             ListEmptyComponent={
               <View style={styles.emptyState}>
                 <Ionicons name="search-outline" size={60} color="#1E293B" />
@@ -317,5 +362,45 @@ const styles = StyleSheet.create({
     color: '#475569',
     fontSize: fontScale(14),
     marginTop: 8,
+    textAlign: 'center',
+    maxWidth: '85%',
+  },
+  alertBanner: {
+    backgroundColor: '#B91C1C',
+    borderRadius: moderateScale(16),
+    padding: moderateScale(16),
+    marginHorizontal: moderateScale(24),
+    marginBottom: moderateScale(16),
+  },
+  alertTitle: {
+    color: '#FFFFFF',
+    fontSize: fontScale(15),
+    fontWeight: '700',
+    marginBottom: moderateScale(6),
+  },
+  alertText: {
+    color: '#FEE2E2',
+    fontSize: fontScale(13),
+    lineHeight: 20,
+    marginBottom: moderateScale(12),
+  },
+  retryBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#F87171',
+    borderRadius: moderateScale(12),
+    paddingVertical: moderateScale(10),
+    paddingHorizontal: moderateScale(16),
+  },
+  retryBtnSecondary: {
+    marginTop: moderateScale(20),
+    backgroundColor: Colors.learnAI.accent,
+    borderRadius: moderateScale(14),
+    paddingVertical: moderateScale(12),
+    paddingHorizontal: moderateScale(24),
+  },
+  retryText: {
+    color: '#FFFFFF',
+    fontSize: fontScale(14),
+    fontWeight: '700',
   },
 });

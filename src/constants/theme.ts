@@ -30,6 +30,8 @@ export const Colors = {
     inputBg: '#1E293B',
     placeholder: '#94A3B8',
     text: '#FFFFFF',
+    primary: '#4A6EDB',
+    secondary: '#6C8DF5',
     primaryGradient: ['#4A6EDB', '#6C8DF5'] as const,
     accent: '#6C8DF5',
     error: '#EF4444',

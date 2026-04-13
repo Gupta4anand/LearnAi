@@ -1,31 +1,32 @@
-import React, { useState, useRef } from 'react';
+import GradientButton from '@/components/GradientButton';
+import LoginInput from '@/components/LoginInput';
+import { Colors } from '@/constants/theme';
+import { authService } from '@/services/api';
+import { useAuthStore } from '@/store/authStore';
+import { fontScale, Layout, moderateScale, verticalScale } from '@/utils/responsive';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Stack, useRouter } from 'expo-router';
+import React, { useRef, useState } from 'react';
 import {
-  StyleSheet,
-  View,
-  Text,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableOpacity,
-  Dimensions,
-  StatusBar,
-  Alert,
-  ScrollView,
-  TextInput,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors } from '@/constants/theme';
-import LoginInput from '@/components/LoginInput';
-import GradientButton from '@/components/GradientButton';
-import { moderateScale, fontScale, verticalScale, Layout } from '@/utils/responsive';
-import { authService } from '@/services/api';
 
 const { width, height } = Layout.window;
 
 export default function SignUpScreen() {
   const router = useRouter();
-  
+  const setAuth = useAuthStore((state) => state.setAuth);
+
   // Refs for auto-focus flow
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -54,14 +55,38 @@ export default function SignUpScreen() {
   const handleSignUp = async () => {
     if (!validate()) return;
     setLoading(true);
+    const username = fullName.replace(/\s/g, '_').toLowerCase();
+
     try {
-      await authService.register({
-        username: fullName.replace(/\s/g, '_').toLowerCase(),
-        password: password,
-        role: "USER", 
-        email: email,
+      const response: any = await authService.register({
+        username,
+        password,
+        role: 'USER',
+        email,
       });
-      Alert.alert('Success!', 'Account created. Please log in.', [{ text: 'Login', onPress: () => router.replace('/login') }]);
+
+      const registeredUser = response?.data?.user;
+      const registeredToken = response?.data?.accessToken;
+
+      if (registeredUser && registeredToken) {
+        await setAuth(registeredUser, registeredToken);
+        router.replace('/(tabs)');
+        return;
+      }
+
+      const loginResponse: any = await authService.login({
+        username,
+        password,
+      });
+
+      const { user, accessToken } = loginResponse?.data || {};
+
+      if (user && accessToken) {
+        await setAuth(user, accessToken);
+        router.replace('/(tabs)');
+      } else {
+        Alert.alert('Success!', 'Account created. Please log in.', [{ text: 'Login', onPress: () => router.replace('/login') }]);
+      }
     } catch (error: any) {
       Alert.alert('Sign Up Error', error.message || 'Registration failed.');
     } finally {

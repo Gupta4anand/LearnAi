@@ -1,12 +1,13 @@
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { registerForPushNotificationsAsync } from '@/services/notifications';
+import { useAuthStore } from '@/store/authStore';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import Constants from 'expo-constants';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useAuthStore } from '@/store/authStore';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { registerForPushNotificationsAsync } from '@/services/notifications';
 
 // Setup React Query Client
 const queryClient = new QueryClient({
@@ -28,6 +29,12 @@ export default function RootLayout() {
 
   useEffect(() => {
     initializeAuth();
+
+    if (Constants.appOwnership === 'expo') {
+      console.warn('Expo Go does not support full expo-notifications functionality. Use a development build to test notifications.');
+      return;
+    }
+
     registerForPushNotificationsAsync();
   }, []);
 
