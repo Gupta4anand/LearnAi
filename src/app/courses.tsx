@@ -1,7 +1,7 @@
 import { Colors } from '@/constants/theme';
 import { courseService } from '@/services/api';
 import { useCourseStore } from '@/store/courseStore';
-import { fontScale, moderateScale } from '@/utils/responsive';
+import { moderateScale } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { LegendList } from '@legendapp/list';
 import { useQuery } from '@tanstack/react-query';
@@ -10,22 +10,22 @@ import { Stack, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
     ActivityIndicator,
-    FlatList,
     RefreshControl,
     StatusBar,
-    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlatList } from 'react-native';
 
 const CATEGORIES = ['All', 'Popular', 'New', 'Trending', 'Advanced', 'Beginner'];
 
 export default function SeeAllCoursesScreen() {
   const router = useRouter();
-  const { bookmarks, toggleBookmark, isBookmarked } = useCourseStore();
+  const { bookmarks, toggleBookmark } = useCourseStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
@@ -73,7 +73,7 @@ export default function SeeAllCoursesScreen() {
 
     return (
       <TouchableOpacity 
-        style={styles.courseCard}
+        className="flex-row bg-learnAI-inputBg rounded-[20px] p-3 items-center mb-4"
         onPress={() => router.push({
           pathname: `/course/${item.id}`,
           params: { 
@@ -84,20 +84,21 @@ export default function SeeAllCoursesScreen() {
         })}
       >
         <Image 
-          source={{ uri: courseImage }} 
-          style={styles.courseThumb} 
+          source={{ uri: item.image || courseImage }} 
+          style={{ width: 70, height: 70, borderRadius: 14 }}
+          className="bg-slate-700"
           contentFit="cover"
           transition={200}
         />
-        <View style={styles.courseInfo}>
-          <Text style={styles.courseName} numberOfLines={1}>{item.title}</Text>
-          <Text style={styles.instructor}>by {instructor?.name?.firstname || 'Expert'}</Text>
-          <View style={styles.courseMeta}>
+        <View className="flex-1 ml-3.5">
+          <Text className="text-white text-[15px] font-bold mb-1" numberOfLines={1}>{item.title}</Text>
+          <Text className="text-slate-400 text-[13px] mb-1.5">by {instructor?.name?.firstname || 'Expert'}</Text>
+          <View className="flex-row items-center">
             <Ionicons name="time-outline" size={14} color="#94A3B8" />
-            <Text style={styles.metaText}>4h 20m</Text>
-            <View style={styles.metaDivider} />
+            <Text className="text-slate-400 text-xs ml-1">4h 20m</Text>
+            <View className="w-1 h-1 rounded-full bg-slate-400/30 mx-2" />
             <Ionicons name="star" size={14} color="#FBBF24" />
-            <Text style={styles.metaText}>{item.rating || '4.8'}</Text>
+            <Text className="text-slate-400 text-xs ml-1">{item.rating || '4.8'}</Text>
           </View>
         </View>
         <TouchableOpacity 
@@ -107,7 +108,7 @@ export default function SeeAllCoursesScreen() {
             instructor: instructor?.name?.firstname || 'Expert',
             image: courseImage
           })}
-          style={styles.bookmarkBtn}
+          className="p-2"
         >
           <Ionicons 
             name={bookmarks.some(b => String(b.id) === String(item.id)) ? "bookmark" : "bookmark-outline"} 
@@ -120,38 +121,42 @@ export default function SeeAllCoursesScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <Animated.View 
+      entering={FadeInDown.duration(800)} 
+      className="flex-1 bg-learnAI-background"
+    >
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="light-content" />
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <SafeAreaView className="flex-1" edges={['top']}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <View className="flex-row items-center justify-between px-6 py-4">
+          <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 items-start justify-center">
             <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>All Courses</Text>
-          <TouchableOpacity style={styles.filterBtn}>
+          <Text className="text-white text-xl font-extrabold">All Courses</Text>
+          <TouchableOpacity className="w-10 h-10 items-end justify-center">
             <Ionicons name="options-outline" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
 
-        {/* Search */}
+        {/* Offline Alert */}
         {hasFetchError && (
-          <View style={styles.alertBanner}>
-            <Text style={styles.alertTitle}>You appear to be offline</Text>
-            <Text style={styles.alertText}>{fetchErrorMessage}</Text>
-            <TouchableOpacity style={styles.retryBtn} onPress={handleRefresh}>
-              <Text style={styles.retryText}>Retry</Text>
+          <View className="bg-red-700 rounded-2xl p-4 mx-6 mb-4">
+            <Text className="text-white text-[15px] font-bold mb-1.5">You appear to be offline</Text>
+            <Text className="text-red-100 text-[13px] leading-5 mb-3">{fetchErrorMessage}</Text>
+            <TouchableOpacity className="self-start bg-red-400 rounded-xl py-2.5 px-4" onPress={handleRefresh}>
+              <Text className="text-white text-[14px] font-bold">Retry</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        <View style={styles.searchBackground}>
-          <Ionicons name="search-outline" size={20} color="#94A3B8" style={styles.searchIcon} />
+        {/* Search */}
+        <View className="flex-row items-center bg-learnAI-inputBg rounded-2xl mx-6 px-4 h-14 mb-5">
+          <Ionicons name="search-outline" size={20} color="#94A3B8" className="mr-2.5" />
           <TextInput
             placeholder="Search all courses..."
             placeholderTextColor="#94A3B8"
-            style={styles.searchInput}
+            className="flex-1 text-white text-base"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -164,13 +169,17 @@ export default function SeeAllCoursesScreen() {
             showsHorizontalScrollIndicator={false}
             data={CATEGORIES}
             keyExtractor={(item) => item}
-            contentContainerStyle={styles.categoryContent}
+            contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24 }}
             renderItem={({ item }) => (
               <TouchableOpacity
                 onPress={() => setActiveCategory(item)}
-                style={[styles.categoryChip, activeCategory === item && styles.activeChip]}
+                className={`px-5 py-2.5 rounded-xl mr-2.5 border border-white/5 ${
+                  activeCategory === item ? 'bg-learnAI-accent' : 'bg-learnAI-inputBg'
+                }`}
               >
-                <Text style={[styles.categoryLabel, activeCategory === item && styles.activeChipText]}>
+                <Text className={`text-sm font-semibold ${
+                  activeCategory === item ? 'text-white' : 'text-slate-400'
+                }`}>
                   {item}
                 </Text>
               </TouchableOpacity>
@@ -180,14 +189,14 @@ export default function SeeAllCoursesScreen() {
 
         {/* List */}
         {coursesLoading ? (
-          <ActivityIndicator color={Colors.learnAI.accent} size="large" style={{ marginTop: 50 }} />
+          <ActivityIndicator color={Colors.learnAI.accent} size="large" className="mt-12" />
         ) : hasFetchError ? (
-          <View style={styles.emptyState}>
+          <View className="items-center mt-14">
             <Ionicons name="wifi-off" size={60} color="#F87171" />
-            <Text style={styles.emptyTitle}>Unable to Load Courses</Text>
-            <Text style={styles.emptySub}>{fetchErrorMessage}</Text>
-            <TouchableOpacity style={styles.retryBtnSecondary} onPress={handleRefresh}>
-              <Text style={styles.retryText}>Try again</Text>
+            <Text className="text-white text-lg font-bold mt-4">Unable to Load Courses</Text>
+            <Text className="text-slate-500 text-sm mt-2 text-center max-w-[85%]">{fetchErrorMessage}</Text>
+            <TouchableOpacity className="mt-5 bg-learnAI-accent rounded-2xl py-3 px-6" onPress={handleRefresh}>
+              <Text className="text-white text-sm font-bold">Try again</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -195,9 +204,9 @@ export default function SeeAllCoursesScreen() {
             data={filteredCourses}
             renderItem={renderItem}
             keyExtractor={(item, index) => `${item.id}-${index}`}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
             showsVerticalScrollIndicator={false}
-            estimatedItemSize={moderateScale(100)}
+            estimatedItemSize={100}
             refreshControl={
               <RefreshControl
                 refreshing={isRefreshing}
@@ -207,200 +216,15 @@ export default function SeeAllCoursesScreen() {
               />
             }
             ListEmptyComponent={
-              <View style={styles.emptyState}>
+              <View className="items-center mt-14">
                 <Ionicons name="search-outline" size={60} color="#1E293B" />
-                <Text style={styles.emptyTitle}>No courses found</Text>
-                <Text style={styles.emptySub}>Try adjusting your search or filters</Text>
+                <Text className="text-white text-lg font-bold mt-4">No courses found</Text>
+                <Text className="text-slate-500 text-sm mt-2 text-center max-w-[85%]">Try adjusting your search or filters</Text>
               </View>
             }
           />
         )}
       </SafeAreaView>
-    </View>
+    </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.learnAI.background,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: moderateScale(24),
-    paddingVertical: moderateScale(16),
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  filterBtn: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-  },
-  headerTitle: {
-    color: '#FFFFFF',
-    fontSize: fontScale(20),
-    fontWeight: '800',
-  },
-  searchBackground: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1E293B',
-    borderRadius: moderateScale(16),
-    marginHorizontal: moderateScale(24),
-    paddingHorizontal: moderateScale(16),
-    height: moderateScale(54),
-    marginBottom: moderateScale(20),
-  },
-  searchIcon: {
-    marginRight: moderateScale(10),
-  },
-  searchInput: {
-    flex: 1,
-    color: '#FFFFFF',
-    fontSize: fontScale(16),
-  },
-  categoryContent: {
-    paddingHorizontal: moderateScale(24),
-    paddingBottom: moderateScale(24),
-  },
-  categoryChip: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: '#1E293B',
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  activeChip: {
-    backgroundColor: Colors.learnAI.accent,
-    borderColor: Colors.learnAI.accent,
-  },
-  categoryLabel: {
-    color: '#94A3B8',
-    fontSize: fontScale(14),
-    fontWeight: '600',
-  },
-  activeChipText: {
-    color: '#FFFFFF',
-  },
-  listContent: {
-    paddingHorizontal: moderateScale(24),
-    paddingBottom: moderateScale(40),
-  },
-  courseCard: {
-    flexDirection: 'row',
-    backgroundColor: '#1E293B',
-    borderRadius: moderateScale(20),
-    padding: moderateScale(12),
-    alignItems: 'center',
-    marginBottom: moderateScale(16),
-  },
-  courseThumb: {
-    width: moderateScale(70),
-    height: moderateScale(70),
-    borderRadius: moderateScale(14),
-    backgroundColor: '#334155',
-  },
-  courseInfo: {
-    flex: 1,
-    marginLeft: moderateScale(14),
-  },
-  courseName: {
-    color: '#FFFFFF',
-    fontSize: fontScale(15),
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  instructor: {
-    color: '#94A3B8',
-    fontSize: fontScale(13),
-    marginBottom: 6,
-  },
-  courseMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  metaText: {
-    color: '#94A3B8',
-    fontSize: fontScale(12),
-    marginLeft: 4,
-  },
-  metaDivider: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#94A3B8',
-    marginHorizontal: 8,
-    opacity: 0.3,
-  },
-  bookmarkBtn: {
-    padding: 8,
-  },
-  emptyState: {
-    alignItems: 'center',
-    marginTop: moderateScale(60),
-  },
-  emptyTitle: {
-    color: '#FFFFFF',
-    fontSize: fontScale(18),
-    fontWeight: '700',
-    marginTop: 16,
-  },
-  emptySub: {
-    color: '#475569',
-    fontSize: fontScale(14),
-    marginTop: 8,
-    textAlign: 'center',
-    maxWidth: '85%',
-  },
-  alertBanner: {
-    backgroundColor: '#B91C1C',
-    borderRadius: moderateScale(16),
-    padding: moderateScale(16),
-    marginHorizontal: moderateScale(24),
-    marginBottom: moderateScale(16),
-  },
-  alertTitle: {
-    color: '#FFFFFF',
-    fontSize: fontScale(15),
-    fontWeight: '700',
-    marginBottom: moderateScale(6),
-  },
-  alertText: {
-    color: '#FEE2E2',
-    fontSize: fontScale(13),
-    lineHeight: 20,
-    marginBottom: moderateScale(12),
-  },
-  retryBtn: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F87171',
-    borderRadius: moderateScale(12),
-    paddingVertical: moderateScale(10),
-    paddingHorizontal: moderateScale(16),
-  },
-  retryBtnSecondary: {
-    marginTop: moderateScale(20),
-    backgroundColor: Colors.learnAI.accent,
-    borderRadius: moderateScale(14),
-    paddingVertical: moderateScale(12),
-    paddingHorizontal: moderateScale(24),
-  },
-  retryText: {
-    color: '#FFFFFF',
-    fontSize: fontScale(14),
-    fontWeight: '700',
-  },
-});

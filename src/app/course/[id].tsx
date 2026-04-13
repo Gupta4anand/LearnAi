@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import {
-  StyleSheet,
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  Dimensions,
 } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -16,23 +15,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import { useCourseStore } from '@/store/courseStore';
 import GradientButton from '@/components/GradientButton';
-import { moderateScale, fontScale, verticalScale, Layout } from '@/utils/responsive';
+import { Layout } from '@/utils/responsive';
 
-const { width } = Dimensions.get('window');
+const TOTAL_LESSONS = 5;
 
 export default function CourseDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { bookmarks, toggleBookmark, isBookmarked } = useCourseStore();
+  const { toggleBookmark, isBookmarked, enrollCourse, isEnrolled, getEnrollment, updateCourseProgress } = useCourseStore();
   
   const [activeTab, setActiveTab] = useState('About');
-  const [isEnrolled, setIsEnrolled] = useState(false);
 
   // Fallback data if params are missing
   const courseId = params.id as string;
   const title = params.title as string || 'AI Advanced Mastery';
   const image = params.image as string || 'https://picsum.photos/seed/ai/800/400';
   const instructor = params.instructor as string || 'Dr. Sarah Chen';
+  const enrollment = getEnrollment(courseId);
+  const enrolled = isEnrolled(courseId);
 
   const handleBookmark = () => {
     toggleBookmark({
@@ -40,6 +40,38 @@ export default function CourseDetailScreen() {
       title,
       image,
       instructor
+    });
+  };
+
+  const handleEnroll = () => {
+    enrollCourse(
+      {
+        id: courseId,
+        title,
+        image,
+        instructor,
+      },
+      TOTAL_LESSONS
+    );
+  };
+
+  const handleOpenLesson = (lessonIndex: number) => {
+    if (!enrolled) {
+      handleEnroll();
+    }
+
+    const nextCompletedLessons = Math.max(enrollment?.completedLessons ?? 0, lessonIndex + 1);
+    updateCourseProgress(courseId, nextCompletedLessons, TOTAL_LESSONS);
+
+    router.push({
+      pathname: '/course/viewer',
+      params: {
+        courseId,
+        courseTitle: title,
+        courseDescription:
+          'Dive into practical AI workflows, guided explanations, and an interactive checkpoint built for a polished mobile learning experience.',
+        instructor,
+      }
     });
   };
 
@@ -52,412 +84,191 @@ export default function CourseDetailScreen() {
   ];
 
   return (
-    <View style={styles.container}>
+    <Animated.View 
+      entering={FadeInDown.duration(800)} 
+      className="flex-1 bg-learnAI-background"
+    >
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="light-content" />
       
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      {/* Fixed Sticky Header */}
+      <SafeAreaView className="absolute top-0 left-0 right-0 flex-row justify-between px-5 z-20" edges={['top']}>
+        <TouchableOpacity 
+          className="w-11 h-11 rounded-full bg-slate-900/60 justify-center items-center border border-white/10" 
+          onPress={() => router.back()}
+        >
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          className="w-11 h-11 rounded-full bg-slate-900/60 justify-center items-center border border-white/10" 
+          onPress={handleBookmark}
+        >
+          <Ionicons 
+            name={isBookmarked(courseId) ? "bookmark" : "bookmark-outline"} 
+            size={24} 
+            color={isBookmarked(courseId) ? Colors.learnAI.accent : "#FFFFFF"} 
+          />
+        </TouchableOpacity>
+      </SafeAreaView>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Banner Section */}
-        <View style={styles.bannerContainer}>
-          <Image source={{ uri: image }} style={styles.bannerImage} contentFit="cover" />
+        <View style={{ width: Layout.window.width, height: 320 }} className="relative bg-slate-900">
+          <Image 
+            source={{ uri: image }} 
+            className="w-full h-full" 
+            contentFit="cover"
+            transition={300}
+            style={{ width: '100%', height: '100%' }}
+          />
           <LinearGradient
-            colors={['rgba(15, 23, 42, 0.8)', 'transparent', 'rgba(15, 23, 42, 1)']}
-            style={styles.gradientOverlay}
+            colors={['rgba(15, 23, 42, 0.4)', 'transparent', 'rgba(15, 23, 42, 1)']}
+            className="absolute inset-0"
           />
           
-          <SafeAreaView style={styles.headerActions} edges={['top']}>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => router.back()}>
-              <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn} onPress={handleBookmark}>
-              <Ionicons 
-                name={isBookmarked(courseId) ? "bookmark" : "bookmark-outline"} 
-                size={24} 
-                color={isBookmarked(courseId) ? Colors.learnAI.accent : "#FFFFFF"} 
-              />
-            </TouchableOpacity>
-          </SafeAreaView>
-
-          <View style={styles.bannerInfo}>
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>Advanced AI</Text>
+          <View className="absolute bottom-6 left-6 right-6">
+            <View className="bg-learnAI-accent px-2.5 py-1 rounded-lg self-start mb-3">
+              <Text className="text-white text-[10px] font-bold uppercase">Advanced AI</Text>
             </View>
-            <Text style={styles.title}>{title}</Text>
+            <Text className="text-white text-[26px] font-extrabold leading-8">{title}</Text>
           </View>
         </View>
 
         {/* Course Info Section */}
-        <View style={styles.infoSection}>
-          <View style={styles.instructorRow}>
-            <View style={styles.instructorAvatar}>
+        <View className="px-6 mt-6">
+          <View className="flex-row items-center mb-6">
+            <View className="w-11 h-11 rounded-full bg-slate-800 justify-center items-center mr-3 border border-slate-700">
               <Ionicons name="person" size={20} color="#94A3B8" />
             </View>
             <View>
-              <Text style={styles.instructorName}>{instructor}</Text>
-              <Text style={styles.instructorTitle}>Senior AI Scientist</Text>
+              <Text className="text-white text-[15px] font-bold">{instructor}</Text>
+              <Text className="text-slate-400 text-sm">Senior AI Scientist</Text>
             </View>
-            <View style={styles.ratingBadge}>
+            <View className="flex-row items-center bg-amber-400/10 px-2.5 py-1.5 rounded-xl ml-auto">
               <Ionicons name="star" size={14} color="#FBBF24" />
-              <Text style={styles.ratingText}>4.9 (2.1k reviews)</Text>
+              <Text className="text-amber-400 text-xs font-bold ml-1">4.9 (2.1k reviews)</Text>
             </View>
           </View>
 
-          {isEnrolled && (
-            <View style={styles.progressContainer}>
-              <View style={styles.progressHeader}>
-                <Text style={styles.progressLabel}>Your Progress</Text>
-                <Text style={styles.progressPercent}>40%</Text>
+          {enrolled && (
+            <View className="bg-learnAI-inputBg rounded-2xl p-4 mb-6">
+              <View className="flex-row justify-between mb-2">
+                <Text className="text-white text-sm font-semibold">Your Progress</Text>
+                <Text className="text-learnAI-accent text-sm font-bold">
+                  {Math.round((enrollment?.progress ?? 0) * 100)}%
+                </Text>
               </View>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: '40%' }]} />
+              <View className="h-1.5 bg-white/10 rounded-full w-full">
+                <View
+                  className="h-full bg-learnAI-accent rounded-full"
+                  style={{ width: `${Math.round((enrollment?.progress ?? 0) * 100)}%` }}
+                />
               </View>
             </View>
           )}
 
           {/* Tabs */}
-          <View style={styles.tabsContainer}>
+          <View className="flex-row border-b border-slate-800 mb-5">
             {['About', 'Lessons', 'Reviews'].map((tab) => (
               <TouchableOpacity 
                 key={tab} 
                 onPress={() => setActiveTab(tab)}
-                style={[styles.tab, activeTab === tab && styles.activeTab]}
+                className={`py-3 mr-6 border-b-2 ${activeTab === tab ? 'border-learnAI-accent' : 'border-transparent'}`}
               >
-                <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
+                <Text className={`text-base font-semibold ${activeTab === tab ? 'text-learnAI-accent' : 'text-slate-400'}`}>
+                  {tab}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
 
           {activeTab === 'About' && (
-            <View style={styles.tabContent}>
-              <Text style={styles.description}>
+            <View className="pb-5">
+              <Text className="text-slate-400 text-[15px] leading-6 mb-6">
                 This course provides a comprehensive introduction to the world of Artificial Intelligence. 
                 You will explore the latest trends, technologies, and practical applications of AI in various industries. 
                 Perfect for engineers, data scientists, and anyone curious about the future of tech.
               </Text>
-              <Text style={styles.sectionTitle}>What you'll learn</Text>
+              <Text className="text-white text-lg font-bold mb-4">What you'll learn</Text>
               {[
                 'Fundamentals of Neural Networks',
                 'Hands-on Deep Learning with PyTorch',
                 'Advanced NLP techniques',
                 'Computer Vision Architectures'
               ].map((item, idx) => (
-                <View key={idx} style={styles.bulletItem}>
+                <View key={idx} className="flex-row items-center mb-3">
                   <Ionicons name="checkmark-circle" size={18} color={Colors.learnAI.accent} />
-                  <Text style={styles.bulletText}>{item}</Text>
+                  <Text className="text-white text-sm ml-3">{item}</Text>
                 </View>
               ))}
             </View>
           )}
 
           {activeTab === 'Lessons' && (
-            <View style={styles.tabContent}>
-              {lessons.map((lesson, idx) => (
-                <TouchableOpacity 
-                  key={idx} 
-                  style={styles.lessonItem}
-                  onPress={() => router.push('/webview')}
-                >
-                  <View style={[styles.lessonNum, lesson.completed && styles.lessonCompleted]}>
-                    {lesson.completed ? (
-                      <Ionicons name="checkmark" size={14} color="#FFFFFF" />
-                    ) : (
-                      <Text style={styles.lessonNumText}>{idx + 1}</Text>
-                    )}
-                  </View>
-                  <View style={styles.lessonInfo}>
-                    <Text style={styles.lessonTitle}>{lesson.title}</Text>
-                    <Text style={styles.lessonDuration}>{lesson.duration}</Text>
-                  </View>
-                  <Ionicons name="play-circle" size={24} color={Colors.learnAI.accent} />
-                </TouchableOpacity>
-              ))}
+            <View className="pb-5">
+              {lessons.map((lesson, idx) => {
+                const lessonCompleted = (enrollment?.completedLessons ?? 0) > idx;
+
+                return (
+                  <TouchableOpacity 
+                    key={idx} 
+                    className="flex-row items-center bg-learnAI-inputBg p-3.5 rounded-2xl mb-3"
+                    onPress={() => handleOpenLesson(idx)}
+                  >
+                    <View className={`w-[30px] h-[30px] rounded-full justify-center items-center mr-3.5 ${lessonCompleted ? 'bg-learnAI-accent' : 'bg-slate-700'}`}>
+                      {lessonCompleted ? (
+                        <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                      ) : (
+                        <Text className="text-white text-xs font-bold">{idx + 1}</Text>
+                      )}
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-white text-sm font-semibold">{lesson.title}</Text>
+                      <Text className="text-slate-500 text-xs mt-0.5">{lesson.duration}</Text>
+                    </View>
+                    <Ionicons name="play-circle" size={24} color={Colors.learnAI.accent} />
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           )}
         </View>
         
-        {/* Fill extra space */}
-        <View style={{ height: moderateScale(120) }} />
+        <View className="h-32" />
       </ScrollView>
 
       {/* Floating Bottom Action */}
-      <SafeAreaView edges={['bottom']} style={styles.stickyFooter}>
-        <View style={styles.footerContent}>
-          <View style={styles.priceContainer}>
-            <Text style={styles.priceLabel}>Price</Text>
-            <Text style={styles.priceValue}>$49.99</Text>
+      <View className="absolute bottom-0 left-0 right-0 bg-learnAI-background border-t border-slate-800 px-6 pt-4 pb-10">
+        <View className="flex-row items-center justify-between">
+          <View className="flex-1">
+            <Text className="text-slate-400 text-xs">Price</Text>
+            <Text className="text-white text-[22px] font-extrabold">$49.99</Text>
           </View>
-          <View style={styles.actionBtn}>
+          <View className="flex-[2] ml-5">
             <GradientButton 
-              title={isEnrolled ? "Continue Learning" : "Enroll Now"} 
+              title={enrolled ? "Continue Learning" : "Enroll Now"} 
               onPress={() => {
-                if (!isEnrolled) setIsEnrolled(true);
-                else router.push('/webview');
+                if (!enrolled) {
+                  handleEnroll();
+                }
+
+                const nextCompletedLessons = Math.max(enrollment?.completedLessons ?? 0, 1);
+                updateCourseProgress(courseId, nextCompletedLessons, TOTAL_LESSONS);
+                router.push({
+                  pathname: '/course/viewer',
+                  params: {
+                    courseId,
+                    courseTitle: title,
+                    courseDescription:
+                      'Dive into practical AI workflows, guided explanations, and an interactive checkpoint built for a polished mobile learning experience.',
+                    instructor,
+                  }
+                });
               }}
             />
           </View>
         </View>
-      </SafeAreaView>
-    </View>
+      </View>
+    </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.learnAI.background,
-  },
-  scrollContent: {
-    paddingBottom: moderateScale(40),
-  },
-  bannerContainer: {
-    width: width,
-    height: verticalScale(320),
-    position: 'relative',
-  },
-  bannerImage: {
-    width: '100%',
-    height: '100%',
-  },
-  gradientOverlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  headerActions: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: moderateScale(20),
-    zIndex: 10,
-  },
-  iconBtn: {
-    width: moderateScale(44),
-    height: moderateScale(44),
-    borderRadius: moderateScale(22),
-    backgroundColor: 'rgba(15, 23, 42, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  bannerInfo: {
-    position: 'absolute',
-    bottom: moderateScale(24),
-    left: moderateScale(24),
-    right: moderateScale(24),
-  },
-  categoryBadge: {
-    backgroundColor: Colors.learnAI.accent,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-    marginBottom: 12,
-  },
-  categoryText: {
-    color: '#FFFFFF',
-    fontSize: fontScale(10),
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  title: {
-    color: '#FFFFFF',
-    fontSize: fontScale(26),
-    fontWeight: '800',
-    lineHeight: 34,
-  },
-  infoSection: {
-    paddingHorizontal: moderateScale(24),
-    marginTop: moderateScale(24),
-  },
-  instructorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: moderateScale(24),
-  },
-  instructorAvatar: {
-    width: moderateScale(44),
-    height: moderateScale(44),
-    borderRadius: moderateScale(22),
-    backgroundColor: '#1E293B',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  instructorName: {
-    color: '#FFFFFF',
-    fontSize: fontScale(15),
-    fontWeight: '700',
-  },
-  instructorTitle: {
-    color: '#94A3B8',
-    fontSize: fontScale(13),
-  },
-  ratingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(251, 191, 36, 0.1)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginLeft: 'auto',
-  },
-  ratingText: {
-    color: '#FBBF24',
-    fontSize: fontScale(12),
-    fontWeight: '700',
-    marginLeft: 4,
-  },
-  progressContainer: {
-    backgroundColor: '#1E293B',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  progressLabel: {
-    color: '#FFFFFF',
-    fontSize: fontScale(14),
-    fontWeight: '600',
-  },
-  progressPercent: {
-    color: Colors.learnAI.accent,
-    fontSize: fontScale(14),
-    fontWeight: '700',
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 3,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: Colors.learnAI.accent,
-    borderRadius: 3,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
-    marginBottom: 20,
-  },
-  tab: {
-    paddingVertical: 12,
-    marginRight: 24,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  activeTab: {
-    borderBottomColor: Colors.learnAI.accent,
-  },
-  tabText: {
-    color: '#94A3B8',
-    fontSize: fontScale(16),
-    fontWeight: '600',
-  },
-  activeTabText: {
-    color: Colors.learnAI.accent,
-  },
-  tabContent: {
-    paddingBottom: 20,
-  },
-  description: {
-    color: '#94A3B8',
-    fontSize: fontScale(15),
-    lineHeight: 24,
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    color: '#FFFFFF',
-    fontSize: fontScale(18),
-    fontWeight: '700',
-    marginBottom: 16,
-  },
-  bulletItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  bulletText: {
-    color: '#FFFFFF',
-    fontSize: fontScale(14),
-    marginLeft: 12,
-  },
-  lessonItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1E293B',
-    padding: 14,
-    borderRadius: 16,
-    marginBottom: 12,
-  },
-  lessonNum: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#334155',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  lessonCompleted: {
-    backgroundColor: Colors.learnAI.accent,
-  },
-  lessonNumText: {
-    color: '#FFFFFF',
-    fontSize: fontScale(12),
-    fontWeight: '700',
-  },
-  lessonInfo: {
-    flex: 1,
-  },
-  lessonTitle: {
-    color: '#FFFFFF',
-    fontSize: fontScale(14),
-    fontWeight: '600',
-  },
-  lessonDuration: {
-    color: '#475569',
-    fontSize: fontScale(12),
-    marginTop: 2,
-  },
-  stickyFooter: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#0F172A',
-    borderTopWidth: 1,
-    borderTopColor: '#1E293B',
-    paddingHorizontal: moderateScale(24),
-    paddingVertical: moderateScale(16),
-  },
-  footerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  priceContainer: {
-    flex: 1,
-  },
-  priceLabel: {
-    color: '#94A3B8',
-    fontSize: fontScale(12),
-  },
-  priceValue: {
-    color: '#FFFFFF',
-    fontSize: fontScale(22),
-    fontWeight: '800',
-  },
-  actionBtn: {
-    flex: 2,
-    marginLeft: 20,
-  },
-});

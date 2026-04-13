@@ -1,8 +1,7 @@
-import React, { useState, forwardRef } from 'react';
-import { StyleSheet, TextInput, View, TextInputProps, Text, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
-import { moderateScale, fontScale } from '@/utils/responsive';
+import { Ionicons } from '@expo/vector-icons';
+import React, { forwardRef, useState } from 'react';
+import { Text, TextInput, TextInputProps, TouchableOpacity, View } from 'react-native';
 
 interface LoginInputProps extends TextInputProps {
   label?: string;
@@ -10,29 +9,35 @@ interface LoginInputProps extends TextInputProps {
 }
 
 const LoginInput = forwardRef<TextInput, LoginInputProps>(
-  ({ label, isPassword, style, secureTextEntry, ...props }, ref) => {
+  ({ label, isPassword, className, style, secureTextEntry, ...props }, ref) => {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
     return (
-      <View style={styles.container}>
-        {label && <Text style={styles.label}>{label}</Text>}
-        <View style={styles.inputWrapper}>
+      <View className="mb-4 w-full">
+        {label && (
+          <Text className="text-slate-400 text-sm mb-2 ml-1 font-medium">
+            {label}
+          </Text>
+        )}
+        <View className="relative justify-center">
           <TextInput
             ref={ref}
-            style={[styles.input, style, isPassword && { paddingRight: moderateScale(50) }]}
+            className={`bg-learnAI-inputBg rounded-2xl px-4 py-3.5 text-white text-base border border-white/5 ${
+              isPassword ? 'pr-12' : ''
+            } ${className || ''}`}
             placeholderTextColor={Colors.learnAI.placeholder}
             secureTextEntry={isPassword ? !isPasswordVisible : secureTextEntry}
             {...props}
           />
           {isPassword && (
-            <TouchableOpacity 
-              style={styles.toggle} 
+            <TouchableOpacity
+              className="absolute right-4 h-full justify-center"
               onPress={() => setIsPasswordVisible(!isPasswordVisible)}
             >
-              <Ionicons 
-                name={isPasswordVisible ? "eye-off-outline" : "eye-outline"} 
-                size={22} 
-                color="#94A3B8" 
+              <Ionicons
+                name={isPasswordVisible ? "eye-off-outline" : "eye-outline"}
+                size={22}
+                color="#94A3B8"
               />
             </TouchableOpacity>
           )}
@@ -43,37 +48,3 @@ const LoginInput = forwardRef<TextInput, LoginInputProps>(
 );
 
 export default LoginInput;
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: moderateScale(16),
-    width: '100%',
-  },
-  label: {
-    color: '#94A3B8',
-    fontSize: fontScale(14),
-    marginBottom: moderateScale(8),
-    marginLeft: moderateScale(4),
-    fontWeight: '500',
-  },
-  inputWrapper: {
-    position: 'relative',
-    justifyContent: 'center',
-  },
-  input: {
-    backgroundColor: Colors.learnAI.inputBg,
-    borderRadius: moderateScale(16),
-    paddingHorizontal: moderateScale(16),
-    paddingVertical: moderateScale(14),
-    color: Colors.learnAI.text,
-    fontSize: fontScale(16),
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  toggle: {
-    position: 'absolute',
-    right: moderateScale(16),
-    height: '100%',
-    justifyContent: 'center',
-  },
-});

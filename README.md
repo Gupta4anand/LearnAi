@@ -1,50 +1,74 @@
-# Welcome to your Expo app 👋
+# LearnAI - Mini LMS Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+LearnAI is a high-performance, premium Learning Management System (LMS) mobile application built with React Native Expo. It features a sophisticated course catalog, persistent state management, and seamless native-to-webview integration.
 
-## Get started
+## 🚀 Features
 
-1. Install dependencies
+- **Authentication System**: Secure login/signup using `api.freeapi.app` with token persistence via `Expo SecureStore`.
+- **Course Catalog**: Dynamic course discovery using `LegendList` for high-performance list rendering and memory optimization.
+- **Smart Bookmarks**: Local persistence for bookmarked courses with automatic milestone notifications.
+- **Interactive WebView**: Bidirectional communication between Native and WebView for interactive learning modules.
+- **Offline Resilience**: Built-in network error handling with retry mechanisms and offline status banners.
+- **Native Notifications**: Local notifications for engagement milestones and return reminders.
+- **Premium UI/UX**: Built with NativeWind (Tailwind CSS) and optimized for both Portrait and Landscape orientations.
 
+## 🛠️ Technology Stack
+
+- **Framework**: Expo SDK 54 (Latest Stable)
+- **Language**: TypeScript (Strict Mode)
+- **Navigation**: Expo Router (File-based routing)
+- **State Management**: Zustand with Persistence
+- **API Client**: Axios with Interceptors & TanStack Query (React Query)
+- **Styling**: NativeWind (Tailwind CSS for React Native)
+- **Optimization**: LegendList (@legendapp/list)
+- **Native Modules**: Expo Notifications, Expo SecureStore, Expo Image, Expo Image Picker
+
+## 📦 Getting Started
+
+### Prerequisites
+
+- Node.js (v18 or newer)
+- npm or yarn
+- Expo Go (for testing) or an Android/iOS Emulator
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd LearnAi
+   ```
+
+2. Install dependencies:
    ```bash
    npm install
    ```
 
-2. Start the app
-
+3. Start the development server:
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+### Running on Devices
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- **Android**: Press `a` in the terminal to open in an emulator or scan the QR code with Expo Go.
+- **iOS**: Press `i` to open in a simulator.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🏗️ Architecture Decisions
 
-## Get a fresh project
+- **Folder Structure**: Organised by domains (`app`, `components`, `services`, `hooks`, `store`, `utils`) for scalability.
+- **Performance**: Used `LegendList` instead of `FlatList` for smoother scrolling and lower memory footprint on large datasets.
+- **Security**: Sensitive data (auth tokens) is stored exclusively in `Expo SecureStore`, while app preferences use `AsyncStorage`.
+- **Error Handling**: Implemented a global interceptor pattern in Axios for token refreshing and error normalization.
 
-When you're ready, run:
+## ⚠️ Known Issues / Limitations
 
-```bash
-npm run reset-project
-```
+- **Expo Go Notifications**: Full notification functionality requires a Development Build (`npx expo run:android` or `npx expo run:ios`).
+- **Mock Data**: Using `freeapi.app` public endpoints which occasionally return randomized data for instructors and products.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 📸 Screenshots
 
-## Learn more
+*(Add your screenshots here after building)*
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+Developed as part of the React Native Expo Developer Assignment.

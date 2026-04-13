@@ -1,32 +1,31 @@
-import React, { useState, useRef } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableOpacity,
-  Dimensions,
-  StatusBar,
-  Alert,
-  TextInput,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors } from '@/constants/theme';
-import LoginInput from '@/components/LoginInput';
 import GradientButton from '@/components/GradientButton';
-import { moderateScale, fontScale, verticalScale, Layout } from '@/utils/responsive';
+import LoginInput from '@/components/LoginInput';
+import { Colors } from '@/constants/theme';
 import { authService } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
+import { Layout, moderateScale, verticalScale } from '@/utils/responsive';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Stack, useRouter } from 'expo-router';
+import React, { useRef, useState } from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Layout.window;
 
 export default function LoginScreen() {
   const router = useRouter();
   const passwordRef = useRef<TextInput>(null);
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,16 +33,16 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) return Alert.alert('Error', 'Please fill in all fields');
-    
+
     setLoading(true);
     try {
       const response: any = await authService.login({
         username: email.split('@')[0],
         password: password,
       });
-      
-      const { user, accessToken } = response.data;
-      await login(user, accessToken);
+
+      const { user, accessToken, refreshToken } = response.data;
+      await login(user, accessToken, refreshToken);
       router.replace('/(tabs)');
     } catch (error: any) {
       Alert.alert('Login Error', error.message || 'User does not exist on the live API.');
@@ -53,34 +52,57 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <Animated.View 
+      entering={FadeInDown.duration(800)} 
+      className="flex-1 bg-learnAI-background"
+    >
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="light-content" />
-      
+
       {/* Background Shapes */}
-      <View style={styles.backgroundContainer}>
+      <View className="absolute inset-0 overflow-hidden">
         <LinearGradient
           colors={['rgba(74, 110, 219, 0.2)', 'transparent']}
-          style={[styles.blob, { top: verticalScale(-100), left: moderateScale(-50) }]}
+          style={{
+            position: 'absolute',
+            width: width * 0.8,
+            height: width * 0.8,
+            borderRadius: (width * 0.8) / 2,
+            top: verticalScale(-100),
+            left: moderateScale(-50),
+            opacity: 0.6
+          }}
         />
         <LinearGradient
           colors={['rgba(108, 141, 245, 0.15)', 'transparent']}
-          style={[styles.blob, { bottom: verticalScale(height * 0.2), right: moderateScale(-100) }]}
+          style={{
+            position: 'absolute',
+            width: width * 0.8,
+            height: width * 0.8,
+            borderRadius: (width * 0.8) / 2,
+            bottom: verticalScale(height * 0.2),
+            right: moderateScale(-100),
+            opacity: 0.6
+          }}
         />
       </View>
 
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView className="flex-1">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
+          className="flex-1"
         >
-          <View style={styles.content}>
-            <View style={styles.header}>
-              <Text style={styles.logo}>Learn<Text style={styles.logoAccent}>AI</Text></Text>
-              <Text style={styles.tagline}>Welcome back</Text>
+          <View className="flex-1 px-6 justify-between py-10">
+            <View className="items-center mt-[15%]">
+              <Text className="text-5xl font-extrabold text-white tracking-tighter">
+                Learn<Text className="text-learnAI-accent">AI</Text>
+              </Text>
+              <Text className="text-slate-400 text-base mt-2 font-medium tracking-wide">
+                Welcome back
+              </Text>
             </View>
 
-            <View style={styles.form}>
+            <View className="w-full mb-10">
               <LoginInput
                 label="Email"
                 placeholder="Enter your email"
@@ -102,9 +124,9 @@ export default function LoginScreen() {
                 returnKeyType="done"
                 onSubmitEditing={handleLogin}
               />
-              
-              <TouchableOpacity style={styles.forgotBtn}>
-                <Text style={styles.forgotText}>Forgot Password?</Text>
+
+              <TouchableOpacity className="self-end mb-6">
+                <Text className="text-slate-400 text-sm font-medium">Forgot Password?</Text>
               </TouchableOpacity>
 
               <GradientButton
@@ -114,93 +136,15 @@ export default function LoginScreen() {
               />
             </View>
 
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Don’t have an account? </Text>
+            <View className="flex-row justify-center items-center mb-5">
+              <Text className="text-slate-400 text-[15px]">Don’t have an account? </Text>
               <TouchableOpacity onPress={() => router.push('/signup')}>
-                <Text style={styles.signUpText}>Sign Up</Text>
+                <Text className="text-learnAI-accent text-[15px] font-bold">Sign Up</Text>
               </TouchableOpacity>
             </View>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </View>
+    </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.learnAI.background,
-  },
-  backgroundContainer: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
-  },
-  blob: {
-    position: 'absolute',
-    width: width * 0.8,
-    height: width * 0.8,
-    borderRadius: (width * 0.8) / 2,
-    opacity: 0.6,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: moderateScale(24),
-    justifyContent: 'space-between',
-    paddingVertical: moderateScale(40),
-  },
-  header: {
-    alignItems: 'center',
-    marginTop: verticalScale(height * 0.08),
-  },
-  logo: {
-    fontSize: fontScale(42),
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -1,
-  },
-  logoAccent: {
-    color: Colors.learnAI.accent,
-  },
-  tagline: {
-    color: '#94A3B8',
-    fontSize: fontScale(16),
-    marginTop: moderateScale(8),
-    fontWeight: '500',
-    letterSpacing: 0.5,
-  },
-  form: {
-    width: '100%',
-    marginBottom: moderateScale(40),
-  },
-  forgotBtn: {
-    alignSelf: 'flex-end',
-    marginBottom: moderateScale(24),
-  },
-  forgotText: {
-    color: '#94A3B8',
-    fontSize: fontScale(14),
-    fontWeight: '500',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: moderateScale(20),
-  },
-  footerText: {
-    color: '#94A3B8',
-    fontSize: fontScale(15),
-  },
-  signUpText: {
-    color: Colors.learnAI.accent,
-    fontSize: fontScale(15),
-    fontWeight: '700',
-  },
-});

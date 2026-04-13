@@ -2,7 +2,29 @@ import { Colors } from '@/constants/theme';
 import { moderateScale } from '@/utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+
+function TabIcon({ name, focused, color }: { name: any, focused: boolean, color: string }) {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    scale.value = withSpring(focused ? 1.2 : 1, {
+      damping: 10,
+      stiffness: 100,
+    });
+  }, [focused]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <Ionicons name={name} size={24} color={color} />
+    </Animated.View>
+  );
+}
 
 export default function TabLayout() {
   return (
@@ -41,7 +63,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "home" : "home-outline"} size={24} color={color} />
+            <TabIcon name={focused ? "home" : "home-outline"} focused={focused} color={color} />
           ),
         }}
       />
@@ -50,7 +72,7 @@ export default function TabLayout() {
         options={{
           title: 'Bookmarks',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "bookmark" : "bookmark-outline"} size={24} color={color} />
+            <TabIcon name={focused ? "bookmark" : "bookmark-outline"} focused={focused} color={color} />
           ),
         }}
       />
@@ -59,7 +81,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "person" : "person-outline"} size={24} color={color} />
+            <TabIcon name={focused ? "person" : "person-outline"} focused={focused} color={color} />
           ),
         }}
       />

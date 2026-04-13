@@ -3,7 +3,7 @@ import LoginInput from '@/components/LoginInput';
 import { Colors } from '@/constants/theme';
 import { authService } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
-import { fontScale, Layout, moderateScale, verticalScale } from '@/utils/responsive';
+import { Layout, moderateScale, verticalScale } from '@/utils/responsive';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
@@ -13,12 +13,12 @@ import {
     Platform,
     ScrollView,
     StatusBar,
-    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View
 } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Layout.window;
@@ -67,9 +67,10 @@ export default function SignUpScreen() {
 
       const registeredUser = response?.data?.user;
       const registeredToken = response?.data?.accessToken;
+      const registeredRefreshToken = response?.data?.refreshToken;
 
       if (registeredUser && registeredToken) {
-        await setAuth(registeredUser, registeredToken);
+        await setAuth(registeredUser, registeredToken, registeredRefreshToken);
         router.replace('/(tabs)');
         return;
       }
@@ -79,10 +80,10 @@ export default function SignUpScreen() {
         password,
       });
 
-      const { user, accessToken } = loginResponse?.data || {};
+      const { user, accessToken, refreshToken } = loginResponse?.data || {};
 
       if (user && accessToken) {
-        await setAuth(user, accessToken);
+        await setAuth(user, accessToken, refreshToken);
         router.replace('/(tabs)');
       } else {
         Alert.alert('Success!', 'Account created. Please log in.', [{ text: 'Login', onPress: () => router.replace('/login') }]);
@@ -95,33 +96,61 @@ export default function SignUpScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <Animated.View 
+      entering={FadeInDown.duration(800)} 
+      className="flex-1 bg-learnAI-background"
+    >
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="light-content" />
       
-      <View style={styles.backgroundContainer}>
+      {/* Background Shapes */}
+      <View className="absolute inset-0 overflow-hidden">
         <LinearGradient
           colors={['rgba(74, 110, 219, 0.2)', 'transparent']}
-          style={[styles.blob, { top: verticalScale(-100), left: moderateScale(-50) }]}
+          style={{
+            position: 'absolute',
+            width: width * 0.8,
+            height: width * 0.8,
+            borderRadius: (width * 0.8) / 2,
+            top: verticalScale(-100),
+            left: moderateScale(-50),
+            opacity: 0.6
+          }}
         />
         <LinearGradient
           colors={['rgba(108, 141, 245, 0.15)', 'transparent']}
-          style={[styles.blob, { bottom: verticalScale(height * 0.2), right: moderateScale(-100) }]}
+          style={{
+            position: 'absolute',
+            width: width * 0.8,
+            height: width * 0.8,
+            borderRadius: (width * 0.8) / 2,
+            bottom: verticalScale(height * 0.2),
+            right: moderateScale(-100),
+            opacity: 0.6
+          }}
         />
       </View>
 
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView className="flex-1">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
+          className="flex-1"
         >
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-            <View style={styles.header}>
-              <Text style={styles.logo}>Learn<Text style={styles.logoAccent}>AI</Text></Text>
-              <Text style={styles.tagline}>Create your account</Text>
+          <ScrollView 
+            showsVerticalScrollIndicator={false} 
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingVertical: moderateScale(40) }}
+            className="px-6"
+          >
+            <View className="items-center mb-10">
+              <Text className="text-5xl font-extrabold text-white tracking-tighter">
+                Learn<Text className="text-learnAI-accent">AI</Text>
+              </Text>
+              <Text className="text-slate-400 text-base mt-2 font-medium tracking-wide">
+                Create your account
+              </Text>
             </View>
 
-            <View style={styles.form}>
+            <View className="w-full">
               <LoginInput
                 label="Full Name"
                 placeholder="Enter your name"
@@ -132,7 +161,7 @@ export default function SignUpScreen() {
                 onSubmitEditing={() => emailRef.current?.focus()}
                 blurOnSubmit={false}
               />
-              {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
+              {errors.fullName && <Text className="text-red-500 text-xs -mt-2 mb-3 ml-1">{errors.fullName}</Text>}
 
               <LoginInput
                 ref={emailRef}
@@ -146,7 +175,7 @@ export default function SignUpScreen() {
                 onSubmitEditing={() => passwordRef.current?.focus()}
                 blurOnSubmit={false}
               />
-              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+              {errors.email && <Text className="text-red-500 text-xs -mt-2 mb-3 ml-1">{errors.email}</Text>}
 
               <LoginInput
                 ref={passwordRef}
@@ -159,7 +188,7 @@ export default function SignUpScreen() {
                 onSubmitEditing={() => confirmRef.current?.focus()}
                 blurOnSubmit={false}
               />
-              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+              {errors.password && <Text className="text-red-500 text-xs -mt-2 mb-3 ml-1">{errors.password}</Text>}
 
               <LoginInput
                 ref={confirmRef}
@@ -171,9 +200,9 @@ export default function SignUpScreen() {
                 returnKeyType="done"
                 onSubmitEditing={handleSignUp}
               />
-              {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+              {errors.confirmPassword && <Text className="text-red-500 text-xs -mt-2 mb-3 ml-1">{errors.confirmPassword}</Text>}
               
-              <View style={styles.btnContainer}>
+              <View className="mt-5">
                 <GradientButton
                   title={loading ? "Creating Account..." : "Sign Up"}
                   loading={loading}
@@ -182,93 +211,15 @@ export default function SignUpScreen() {
               </View>
             </View>
 
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account? </Text>
+            <View className="flex-row justify-center items-center mt-10">
+              <Text className="text-slate-400 text-[15px]">Already have an account? </Text>
               <TouchableOpacity onPress={() => router.replace('/login')}>
-                <Text style={styles.loginText}>Login</Text>
+                <Text className="text-learnAI-accent text-[15px] font-bold">Login</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </View>
+    </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.learnAI.background,
-  },
-  backgroundContainer: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
-  },
-  blob: {
-    position: 'absolute',
-    width: width * 0.8,
-    height: width * 0.8,
-    borderRadius: (width * 0.8) / 2,
-    opacity: 0.6,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: moderateScale(24),
-    justifyContent: 'center',
-    paddingVertical: moderateScale(40),
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: moderateScale(40),
-  },
-  logo: {
-    fontSize: fontScale(42),
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -1,
-  },
-  logoAccent: {
-    color: Colors.learnAI.accent,
-  },
-  tagline: {
-    color: '#94A3B8',
-    fontSize: fontScale(16),
-    marginTop: moderateScale(8),
-    fontWeight: '500',
-    letterSpacing: 0.5,
-  },
-  form: {
-    width: '100%',
-  },
-  btnContainer: {
-    marginTop: moderateScale(20),
-  },
-  errorText: {
-    color: Colors.learnAI.error,
-    fontSize: fontScale(12),
-    marginTop: moderateScale(-8),
-    marginBottom: moderateScale(12),
-    marginLeft: 4,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: moderateScale(40),
-  },
-  footerText: {
-    color: '#94A3B8',
-    fontSize: fontScale(15),
-  },
-  loginText: {
-    color: Colors.learnAI.accent,
-    fontSize: fontScale(15),
-    fontWeight: '700',
-  },
-});

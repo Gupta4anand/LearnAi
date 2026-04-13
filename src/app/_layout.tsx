@@ -8,6 +8,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import './global.css';
 
 // Setup React Query Client
 const queryClient = new QueryClient({
@@ -41,12 +42,19 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack initialRouteName="splash">
-          <Stack.Screen name="splash" options={{ headerShown: false }} />
-          <Stack.Screen name="login" options={{ headerShown: false }} />
-          <Stack.Screen name="signup" options={{ headerShown: false }} />
-          <Stack.Screen name="courses" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack 
+          initialRouteName="splash"
+          screenOptions={{
+            animation: 'fade_from_bottom',
+            headerShown: false,
+          }}
+        >
+          <Stack.Screen name="splash" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="signup" />
+          <Stack.Screen name="courses" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="course/[id]" />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
         <StatusBar style="auto" />
