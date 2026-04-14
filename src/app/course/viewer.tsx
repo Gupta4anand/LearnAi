@@ -364,6 +364,25 @@ export default function CourseViewerScreen() {
           return;
         }
 
+        if (message.type === 'LIKED') {
+          const bookmarked = isBookmarked(message.courseId);
+          if (!bookmarked) {
+            enrollCourse(
+              {
+                id: courseData.id,
+                title: courseData.title,
+                instructor: courseData.instructor,
+                image: 'https://picsum.photos/seed/learnai_viewer/400/300',
+              },
+              TOTAL_LESSONS
+            );
+            toggleBookmark({
+              id: courseData.id,
+              title: courseData.title,
+              instructor: courseData.instructor,
+              image: 'https://picsum.photos/seed/learnai_viewer/400/300',
+            });
+          }
           Alert.alert('Course liked', bookmarked ? 'This course is already in your bookmarks.' : 'The course was added to your bookmarks.');
           return;
         }
