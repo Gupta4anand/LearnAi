@@ -69,6 +69,7 @@ export default function RootLayout() {
             animationDuration: 200,
             headerShown: false,
             gestureEnabled: true,
+            contentStyle: { backgroundColor: '#0F172A' },
           }}
         >
           <Stack.Screen name="splash" />
