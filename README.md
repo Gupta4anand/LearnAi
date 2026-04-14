@@ -35,7 +35,7 @@ LearnAI is a high-performance, premium Learning Management System (LMS) mobile a
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/Gupta4anand/LearnAi
    cd LearnAi
    ```
 
@@ -67,8 +67,9 @@ LearnAI is a high-performance, premium Learning Management System (LMS) mobile a
 - **Mock Data**: Using `freeapi.app` public endpoints which occasionally return randomized data for instructors and products.
 
 ## 📸 Screenshots
+![Sign in ](image.png)
+![Sign up](image-1.png)
 
-*(Add your screenshots here after building)*
 
----
+
 Developed as part of the React Native Expo Developer Assignment.

@@ -86,7 +86,10 @@ export default function SignUpScreen() {
     setLoading(true);
 
     try {
-      const username = fullName.replace(/\s/g, '_').toLowerCase() || email.split('@')[0];
+      // Generate a unique username to avoid collisions on the shared API
+      const baseUsername = fullName.replace(/\s/g, '').toLowerCase() || email.split('@')[0].replace(/[^a-zA-Z0-0]/g, '');
+      const uniqueSuffix = Math.floor(100 + Math.random() * 900);
+      const username = `${baseUsername}${uniqueSuffix}`;
       
       // 1. Register the user
       await authService.register({
@@ -119,7 +122,19 @@ export default function SignUpScreen() {
         router.replace('/login');
       }
     } catch (error: any) {
-      Alert.alert('Sign Up Error', error.message || 'Registration failed.');
+      const errorMsg = error.message || 'Registration failed.';
+      if (errorMsg.toLowerCase().includes('already exists')) {
+        Alert.alert(
+          'Account Exists', 
+          'A user with this email or a similar username already exists. Please try logging in or use a different email address.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Login', onPress: () => router.replace('/login') }
+          ]
+        );
+      } else {
+        Alert.alert('Sign Up Error', errorMsg);
+      }
     } finally {
       setLoading(false);
     }
