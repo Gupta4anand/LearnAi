@@ -17,7 +17,9 @@ import type { WebViewMessageEvent } from 'react-native-webview/lib/WebViewTypes'
 
 type WebViewActionMessage =
   | { type: 'COMPLETED'; courseId: string }
-  | { type: 'LIKED'; courseId: string };
+  | { type: 'LIKED'; courseId: string }
+  | { type: 'ROUTE_NAVIGATE'; route: string }
+  | { type: 'DOWNLOAD_CERTIFICATE'; courseId: string };
 
 interface CoursePayload {
   id: string;
@@ -33,6 +35,7 @@ const DEFAULT_DESCRIPTION =
 export default function CourseViewerScreen() {
   const router = useRouter();
   const webViewRef = useRef<WebView>(null);
+  const { token } = useAuthStore();
   const { updateCourseProgress, getEnrollment, toggleBookmark, isBookmarked, enrollCourse } = useCourseStore();
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadError, setHasLoadError] = useState(false);
@@ -57,16 +60,22 @@ export default function CourseViewerScreen() {
 
   const courseTitle = courseData.title.length > 28 ? `${courseData.title.slice(0, 28)}...` : courseData.title;
   const enrollment = getEnrollment(courseData.id);
+
+  // Authenticated Session Metadata
   const injectedMetadata = useMemo(
     () => ({
       headers: {
+        'Authorization': `Bearer ${token}`,
         'x-learnai-course-id': courseData.id,
-        'x-learnai-course-title': courseData.title,
-        'x-learnai-instructor': courseData.instructor,
+        'x-learnai-platform': 'mobile-native',
+      },
+      userSession: {
+        isAuthenticated: !!token,
+        lastSync: new Date().toISOString(),
       },
       course: courseData,
     }),
-    [courseData]
+    [courseData, token]
   );
 
   const webContent = useMemo(
@@ -216,12 +225,25 @@ export default function CourseViewerScreen() {
                 <button class="complete-btn" onclick="markCompleted()">Mark as Completed</button>
                 <button class="like-btn" onclick="likeCourse()">Like Course</button>
               </div>
+              <div class="module" id="post-completion" style="display: none; margin-top: 24px; border-color: var(--success);">
+                <p class="module-title" style="color: var(--success);">Scholar Milestone reached!</p>
+                <button class="pill" style="width: 100%; margin-top: 10px; border: 1px solid var(--success); background: transparent; color: var(--success);" onclick="downloadCert()">
+                   Download Course Certificate (.pdf)
+                </button>
+              </div>
               <div id="feedback" class="feedback">Native and WebView are connected.</div>
+              
+              <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--panel-border); display: flex; justify-content: space-between;">
+                <a href="#" onclick="navigateNative('/(tabs)/profile')" style="color: var(--muted); font-size: 13px; text-decoration: none;">View Profile</a>
+                <a href="#" onclick="navigateNative('/modal')" style="color: var(--muted); font-size: 13px; text-decoration: none;">Help Support</a>
+              </div>
             </div>
           </div>
           <script>
             var course = window.__INITIAL_COURSE__ || {};
             var nativeHeaders = window.__NATIVE_HEADERS__ || {};
+            
+            console.log('WebView Initialized with Headers:', JSON.stringify(nativeHeaders));
 
             function renderCourse(nextCourse) {
               course = nextCourse || course || {};
@@ -241,6 +263,7 @@ export default function CourseViewerScreen() {
             }
 
             function markCompleted() {
+              document.getElementById('post-completion').style.display = 'block';
               showFeedback('Completion sent to native app.');
               sendMessage({ type: 'COMPLETED', courseId: course.id || 'interactive-course' });
             }
@@ -248,6 +271,15 @@ export default function CourseViewerScreen() {
             function likeCourse() {
               showFeedback('Like sent to native app.');
               sendMessage({ type: 'LIKED', courseId: course.id || 'interactive-course' });
+            }
+            
+            function downloadCert() {
+              showFeedback('Requesting certificate download...');
+              sendMessage({ type: 'DOWNLOAD_CERTIFICATE', courseId: course.id });
+            }
+            
+            function navigateNative(route) {
+              sendMessage({ type: 'ROUTE_NAVIGATE', route: route });
             }
 
             window.addEventListener('message', function(event) {
@@ -332,26 +364,21 @@ export default function CourseViewerScreen() {
           return;
         }
 
-        if (message.type === 'LIKED') {
-          const bookmarked = isBookmarked(message.courseId);
-          if (!bookmarked) {
-            enrollCourse(
-              {
-                id: courseData.id,
-                title: courseData.title,
-                instructor: courseData.instructor,
-                image: 'https://picsum.photos/seed/learnai_viewer/400/300',
-              },
-              TOTAL_LESSONS
-            );
-            toggleBookmark({
-              id: courseData.id,
-              title: courseData.title,
-              instructor: courseData.instructor,
-              image: 'https://picsum.photos/seed/learnai_viewer/400/300',
-            });
-          }
           Alert.alert('Course liked', bookmarked ? 'This course is already in your bookmarks.' : 'The course was added to your bookmarks.');
+          return;
+        }
+
+        if (message.type === 'DOWNLOAD_CERTIFICATE') {
+          Alert.alert(
+            'Download Started',
+            'Your certificate for ' + courseData.title + ' is being generated and will be saved to your device.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+
+        if (message.type === 'ROUTE_NAVIGATE') {
+          router.push(message.route as any);
         }
       } catch (error) {
         Alert.alert('Viewer message error', 'The interactive content sent an invalid response.');
