@@ -52,10 +52,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   updateProfile: async (user) => {
-    const token = await SecureStore.getItemAsync('user_token');
-    if (token) {
+    set({ user });
+    try {
       await SecureStore.setItemAsync('user_data', JSON.stringify(user));
-      set((state) => ({ user, token: state.token, refreshToken: state.refreshToken, isAuthenticated: true }));
+    } catch (e) {
+      console.error('Failed to persist user data', e);
     }
   },
 
