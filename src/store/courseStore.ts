@@ -55,7 +55,7 @@ export const useCourseStore = create<CourseState>()(
           sendBookmarkNotification();
         }
       },
-      isBookmarked: (courseId) => get().bookmarks.some(item => item.id === courseId),
+      isBookmarked: (courseId) => get().bookmarks.some(item => String(item.id) === String(courseId)),
       enrollCourse: (course, totalLessons = 5) => {
         const { enrolledCourses } = get();
         const existingCourse = enrolledCourses.find((item) => String(item.id) === String(course.id));

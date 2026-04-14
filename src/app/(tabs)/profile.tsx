@@ -5,21 +5,24 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Image, Modal, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Alert, Image, Modal, Pressable, ScrollView, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { capitalizeName, getInitials } from '@/utils/format';
+import { Layout } from '@/utils/responsive';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout, updateProfile } = useAuthStore();
   const { bookmarks, enrolledCourses } = useCourseStore();
   const [isEditing, setIsEditing] = useState(false);
-  const [displayName, setDisplayName] = useState(user?.username ?? '');
+  const [displayName, setDisplayName] = useState(user?.fullName ?? user?.username ?? '');
   const [displayEmail, setDisplayEmail] = useState(user?.email ?? '');
   const [avatarUri, setAvatarUri] = useState<string>('');
 
   useEffect(() => {
-    setDisplayName(user?.username ?? '');
+    setDisplayName(user?.fullName ?? user?.username ?? '');
     setDisplayEmail(user?.email ?? '');
     const avatar = typeof user?.avatar === 'string' ? user.avatar : '';
     setAvatarUri(avatar);
@@ -112,44 +115,58 @@ export default function ProfileScreen() {
       <StatusBar barStyle="light-content" />
       <SafeAreaView className="flex-1">
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}>
-          <View className="items-center mt-10 mb-8">
-            <View className="relative mb-4">
-              <View className="w-28 h-28 rounded-full bg-slate-800 justify-center items-center border border-slate-700 overflow-hidden">
-                {typeof avatarUri === 'string' && avatarUri.length > 0 ? (
-                  <Image source={{ uri: avatarUri }} className="w-full h-full" resizeMode="cover" />
-                ) : (
-                  <Ionicons name="person" size={60} color="#94A3B8" />
-                )}
-              </View>
+          <View className="items-center mt-6 mb-8">
+            <View className="relative">
+              <LinearGradient
+                colors={['#6C8DF5', '#4A6EDB']}
+                className="w-32 h-32 rounded-full p-1 shadow-2xl shadow-blue-500/30"
+              >
+                <View className="w-full h-full rounded-full bg-learnAI-background justify-center items-center overflow-hidden border-4 border-learnAI-background">
+                  {typeof avatarUri === 'string' && avatarUri.length > 0 ? (
+                    <Image source={{ uri: avatarUri }} className="w-full h-full" resizeMode="cover" />
+                  ) : (
+                    <View className="w-full h-full bg-slate-800 justify-center items-center">
+                      <Text className="text-white text-3xl font-extrabold tracking-tighter">
+                        {getInitials(user?.fullName || user?.username || '') || 'AL'}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </LinearGradient>
               <TouchableOpacity 
-                className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-learnAI-accent border-4 border-learnAI-background justify-center items-center" 
+                activeOpacity={0.8}
+                className="absolute bottom-1 right-1 w-11 h-11 rounded-full bg-learnAI-accent border-4 border-learnAI-background justify-center items-center shadow-lg" 
                 onPress={handlePickAvatar}
               >
-                <Ionicons name="camera" size={16} color="#FFFFFF" />
+                <Ionicons name="camera" size={18} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
 
-            <Text className="text-white text-2xl font-extrabold">{user?.username ?? 'Guest Learner'}</Text>
-            <Text className="text-slate-400 text-sm mt-2">{user?.email ?? 'learner@learnai.com'}</Text>
-            <View className="mt-3 rounded-full bg-slate-800 px-4 py-1.5">
-              <Text className="text-learnAI-accent text-[10px] font-bold uppercase tracking-widest">AI Learner</Text>
+            <View className="items-center mt-5">
+              <Text className="text-white text-[28px] font-extrabold tracking-tight">
+                {capitalizeName(user?.fullName || user?.username || 'Guest Learner')}
+              </Text>
+              <Text className="text-slate-400 text-sm font-medium mt-1">{user?.email ?? 'learner@learnai.com'}</Text>
+              <View className="mt-4 px-4 py-1.5 rounded-full bg-slate-800/80 border border-white/5">
+                <Text className="text-learnAI-accent text-[10px] font-bold uppercase tracking-[0.2em]">AI Enthusiast</Text>
+              </View>
             </View>
           </View>
 
-          <View className="flex-row bg-learnAI-inputBg rounded-[24px] p-5 mb-8 justify-between items-center">
+          <View className="flex-row bg-learnAI-inputBg/50 border border-white/5 rounded-[32px] p-6 mb-8 justify-between items-center">
             <View className="flex-1 items-center">
-              <Text className="text-white text-2xl font-extrabold">{bookmarks.length}</Text>
-              <Text className="text-slate-400 text-[11px] tracking-widest mt-2 uppercase">Bookmarks</Text>
+              <Text className="text-white text-2xl font-extrabold" numberOfLines={1}>{bookmarks.length}</Text>
+              <Text className="text-slate-400 text-[10px] tracking-wider mt-2 uppercase" numberOfLines={1}>Bookmarks</Text>
             </View>
-            <View className="w-px h-12 bg-slate-700 mx-3" />
+            <View className="w-px h-10 bg-slate-700 mx-2" />
             <View className="flex-1 items-center">
-              <Text className="text-white text-2xl font-extrabold">{enrolledCount}</Text>
-              <Text className="text-slate-400 text-[11px] tracking-widest mt-2 uppercase">Enrolled</Text>
+              <Text className="text-white text-2xl font-extrabold" numberOfLines={1}>{enrolledCount}</Text>
+              <Text className="text-slate-400 text-[10px] tracking-wider mt-2 uppercase" numberOfLines={1}>Enrolled</Text>
             </View>
-            <View className="w-px h-12 bg-slate-700 mx-3" />
+            <View className="w-px h-10 bg-slate-700 mx-2" />
             <View className="flex-1 items-center">
-              <Text className="text-white text-2xl font-extrabold">{completedCount}</Text>
-              <Text className="text-slate-400 text-[11px] tracking-widest mt-2 uppercase">Completed</Text>
+              <Text className="text-white text-2xl font-extrabold" numberOfLines={1}>{completedCount}</Text>
+              <Text className="text-slate-400 text-[10px] tracking-wider mt-2 uppercase" numberOfLines={1}>Completed</Text>
             </View>
           </View>
 
@@ -172,25 +189,15 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
             </TouchableOpacity>
 
-            <TouchableOpacity className="flex-row items-center bg-learnAI-inputBg rounded-[24px] p-4">
+            <TouchableOpacity className="flex-row items-center bg-learnAI-inputBg rounded-[24px] p-4" onPress={() => router.push('/settings/updates')}>
               <View className="w-10 h-10 rounded-2xl bg-amber-400/10 justify-center items-center">
-                <Ionicons name="notifications-outline" size={22} color="#FBBF24" />
+                <Ionicons name="cloud-download-outline" size={22} color="#FBBF24" />
               </View>
-              <Text className="flex-1 text-white text-base font-semibold ml-4">Notifications</Text>
+              <Text className="flex-1 text-white text-base font-semibold ml-4">Software Update</Text>
               <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
             </TouchableOpacity>
 
-            <Text className="text-slate-500 text-[11px] font-bold uppercase tracking-widest ml-1 mt-6 mb-3">Preferences</Text>
-
-            <TouchableOpacity className="flex-row items-center bg-learnAI-inputBg rounded-[24px] p-4">
-              <View className="w-10 h-10 rounded-2xl bg-slate-400/10 justify-center items-center">
-                <Ionicons name="moon-outline" size={22} color="#94A3B8" />
-              </View>
-              <Text className="flex-1 text-white text-base font-semibold ml-4">Dark Mode</Text>
-              <View className="w-2 h-2 rounded-full bg-learnAI-accent" />
-            </TouchableOpacity>
-
-            <TouchableOpacity className="flex-row items-center bg-learnAI-inputBg rounded-[24px] p-4 mt-8" onPress={handleLogout}>
+            <TouchableOpacity className="flex-row items-center bg-learnAI-inputBg rounded-[24px] p-4 mt-6" onPress={handleLogout}>
               <View className="w-10 h-10 rounded-2xl bg-red-500/10 justify-center items-center">
                 <Ionicons name="log-out-outline" size={22} color="#EF4444" />
               </View>
@@ -203,48 +210,79 @@ export default function ProfileScreen() {
           </View>
         </ScrollView>
 
-        <Modal visible={isEditing} animationType="slide" transparent={true} onRequestClose={() => setIsEditing(false)}>
-          <View className="flex-1 justify-end bg-black/60">
-            <View className="bg-learnAI-background rounded-t-3xl p-6">
-              <View className="flex-row items-center justify-between mb-5">
-                <Text className="text-white text-lg font-bold">Edit Profile</Text>
-                <TouchableOpacity onPress={() => setIsEditing(false)}>
-                  <Ionicons name="close" size={24} color="#94A3B8" />
+        <Modal 
+          visible={isEditing} 
+          animationType="fade" 
+          transparent={true} 
+          onRequestClose={() => setIsEditing(false)}
+        >
+          <View className="flex-1 justify-end bg-black/70">
+            <Pressable className="absolute inset-0" onPress={() => setIsEditing(false)} />
+            <Animated.View 
+              entering={FadeInUp.duration(400)}
+              className="bg-slate-900 rounded-t-[40px] px-6 pt-1 pb-12"
+            >
+              <View className="w-12 h-1.5 bg-slate-700/50 rounded-full self-center mt-3 mb-8" />
+              
+              <View className="flex-row items-center justify-between mb-8">
+                <Text className="text-white text-2xl font-bold">Edit Profile</Text>
+                <TouchableOpacity 
+                  onPress={() => setIsEditing(false)}
+                  className="w-10 h-10 rounded-full bg-slate-800 items-center justify-center"
+                >
+                  <Ionicons name="close" size={24} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
 
-              <View className="mb-4">
-                <Text className="text-slate-400 mb-2">Display Name</Text>
-                <TextInput
-                  value={displayName}
-                  onChangeText={setDisplayName}
-                  className="rounded-3xl bg-slate-900 px-4 py-3.5 text-white"
-                  placeholder="Enter your name"
-                  placeholderTextColor="#64748B"
-                />
+              <View>
+                <View className="mb-6">
+                  <Text className="text-slate-400 text-sm font-bold mb-3 uppercase tracking-wider ml-1">Display Name</Text>
+                  <View className="flex-row items-center bg-slate-800 border border-slate-700 rounded-2xl px-4 h-16">
+                    <Ionicons name="person-outline" size={20} color="#64748B" />
+                    <TextInput
+                      value={displayName}
+                      onChangeText={setDisplayName}
+                      className="flex-1 text-white text-base font-semibold ml-3"
+                      placeholder="Enter your name"
+                      placeholderTextColor="#64748B"
+                    />
+                  </View>
+                </View>
+
+                <View className="mb-10">
+                  <Text className="text-slate-400 text-sm font-bold mb-3 uppercase tracking-wider ml-1">Email Address</Text>
+                  <View className="flex-row items-center bg-slate-800 border border-slate-700 rounded-2xl px-4 h-16">
+                    <Ionicons name="mail-outline" size={20} color="#64748B" />
+                    <TextInput
+                      value={displayEmail}
+                      onChangeText={setDisplayEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      className="flex-1 text-white text-base font-semibold ml-3"
+                      placeholder="Enter your email"
+                      placeholderTextColor="#64748B"
+                    />
+                  </View>
+                </View>
+
+                <View className="flex-row gap-x-4">
+                  <TouchableOpacity 
+                    className="flex-1 flex-row items-center justify-center rounded-2xl bg-slate-800 border border-slate-700 h-16" 
+                    onPress={handlePickAvatar}
+                  >
+                    <Ionicons name="camera-outline" size={20} color="#FFFFFF" />
+                    <Text className="text-white font-bold text-base ml-2">New Avatar</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    className="flex-[1.5] rounded-2xl bg-learnAI-accent h-16 items-center justify-center shadow-lg shadow-blue-500/30" 
+                    onPress={handleSaveProfile}
+                  >
+                    <Text className="text-white font-bold text-base">Save Changes</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-
-              <View className="mb-4">
-                <Text className="text-slate-400 mb-2">Email Address</Text>
-                <TextInput
-                  value={displayEmail}
-                  onChangeText={setDisplayEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  className="rounded-3xl bg-slate-900 px-4 py-3.5 text-white"
-                  placeholder="Enter your email"
-                  placeholderTextColor="#64748B"
-                />
-              </View>
-
-              <TouchableOpacity className="w-full rounded-3xl bg-blue-600 py-4 items-center mb-4" onPress={handlePickAvatar}>
-                <Text className="text-white font-bold">Choose Avatar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity className="w-full rounded-3xl bg-emerald-500 py-4 items-center" onPress={handleSaveProfile}>
-                <Text className="text-white font-bold">Save Changes</Text>
-              </TouchableOpacity>
-            </View>
+            </Animated.View>
           </View>
         </Modal>
       </SafeAreaView>

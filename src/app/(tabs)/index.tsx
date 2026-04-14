@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useCourseStore } from '@/store/courseStore';
 import { useNetworkStore } from '@/store/networkStore';
 import { Layout, moderateScale } from '@/utils/responsive';
+import { capitalizeName } from '@/utils/format';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
@@ -27,16 +28,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function DashboardScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { bookmarks, toggleBookmark } = useCourseStore();
+  const { bookmarks, toggleBookmark, isBookmarked } = useCourseStore();
   const { cachedCourses, cachedInstructors, lastCatalogSyncAt, setCatalogCache } = useContentStore();
   const { isConnected, isInternetReachable } = useNetworkStore();
   const scrollX = useRef(new RNAnimated.Value(0)).current;
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const isOffline = isConnected === false || isInternetReachable === false;
-  const displayName = user?.username 
-    ? user.username.charAt(0).toUpperCase() + user.username.slice(1) 
-    : 'Scholar';
+  const displayName = capitalizeName(user?.fullName || user?.username || 'Scholar');
 
   const { 
     data: courses, 
@@ -210,37 +209,45 @@ export default function DashboardScreen() {
                     { title: "AI Business Strategy", tag: "BEST SELLER", icon: "stats-chart", colors: ['rgba(5, 150, 105, 0.8)', 'rgba(16, 185, 129, 0.9)'], image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=600' },
                     { title: "Neural Networks", tag: "ADVANCED", icon: "hardware-chip", colors: ['rgba(220, 38, 38, 0.8)', 'rgba(239, 68, 68, 0.9)'], image: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&q=80&w=600' }
                   ].map((banner, index) => (
-                    <TouchableOpacity key={index} className="mr-4 overflow-hidden rounded-3xl relative" style={{ width: Layout.window.width - 48, height: 160 }} activeOpacity={0.9}>
+                    <TouchableOpacity 
+                      key={index} 
+                      className="mr-4 overflow-hidden rounded-3xl relative bg-slate-800" 
+                      style={{ width: Layout.window.width - 48, height: 160 }} 
+                      activeOpacity={0.9}
+                    >
                       <Image 
                         source={{ uri: banner.image }} 
-                        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                        className="absolute inset-0"
                         contentFit="cover"
+                        transition={200}
                       />
                       <LinearGradient
                         colors={banner.colors as any}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
-                        className="p-6 flex-row justify-between items-center flex-1"
+                        className="absolute inset-0 p-6 flex-row justify-between items-center"
                       >
-                        <View className="flex-1">
-                          <Text className="text-white/80 text-[10px] font-bold tracking-widest mb-2">{banner.tag}</Text>
-                          <Text className="text-white text-[22px] font-extrabold mb-4 leading-7">{banner.title}</Text>
+                        <View className="flex-1 items-start justify-center">
+                          <Text className="text-white/80 text-[10px] font-bold tracking-widest mb-1">{banner.tag}</Text>
+                          <Text className="text-white text-[22px] font-extrabold mb-3 leading-7" numberOfLines={2}>
+                            {banner.title}
+                          </Text>
                           
                           {banner.isEnrolled ? (
-                            <View className="mt-2">
-                              <View className="h-1 bg-white/20 rounded-full w-full mb-1.5 overflow-hidden">
+                            <View className="w-full">
+                              <View className="h-1 bg-white/20 rounded-full w-[80%] mb-1.5 overflow-hidden">
                                 <View className="h-full bg-white rounded-full" style={{ width: `${banner.progress * 100}%` }} />
                               </View>
                               <Text className="text-white/80 text-[11px] font-semibold">{banner.progress * 100}% Complete</Text>
                             </View>
                           ) : (
-                            <View className="bg-white px-4 py-2 rounded-xl self-start">
+                            <View className="bg-white px-4 py-2 rounded-xl">
                               <Text className="text-slate-900 font-bold text-[13px]">Enroll Now</Text>
                             </View>
                           )}
                         </View>
-                        <View className="ml-3">
-                          <Ionicons name={banner.icon as any} size={70} color="rgba(255,255,255,0.2)" />
+                        <View className="ml-2 opacity-30">
+                          <Ionicons name={banner.icon as any} size={64} color="#FFFFFF" />
                         </View>
                       </LinearGradient>
                     </TouchableOpacity>
@@ -316,9 +323,9 @@ export default function DashboardScreen() {
                           className="p-2"
                         >
                           <Ionicons 
-                            name={bookmarks.some(b => String(b.id) === String(item.id)) ? "bookmark" : "bookmark-outline"} 
+                            name={isBookmarked(item.id) ? "bookmark" : "bookmark-outline"} 
                             size={24} 
-                            color={bookmarks.some(b => String(b.id) === String(item.id)) ? Colors.learnAI.accent : "#94A3B8"} 
+                            color={isBookmarked(item.id) ? Colors.learnAI.accent : "#94A3B8"} 
                           />
                         </TouchableOpacity>
                       </TouchableOpacity>

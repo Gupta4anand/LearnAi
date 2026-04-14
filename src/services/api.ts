@@ -111,6 +111,9 @@ export const authService = {
   login: (data: any) => apiClient.post('/users/login', data),
   register: (data: any) => apiClient.post('/users/register', data),
   logout: () => apiClient.post('/users/logout'),
+  forgotPassword: (data: { email: string }) => apiClient.post('/users/forgot-password', data),
+  resetPassword: (token: string, data: { newPassword: string }) => 
+    apiClient.post(`/users/reset-password/${token}`, data),
 };
 
 export const courseService = {

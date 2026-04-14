@@ -5,11 +5,20 @@ import { useAuthStore } from '@/store/authStore';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Constants from 'expo-constants';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { cssInterop } from 'nativewind';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import './global.css';
+
+// Register expo-linear-gradient with NativeWind
+cssInterop(LinearGradient, {
+  className: {
+    target: 'style',
+  },
+});
 
 // Setup React Query Client
 const queryClient = new QueryClient({
@@ -45,11 +54,13 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack 
+        <Stack
           initialRouteName="splash"
           screenOptions={{
-            animation: 'fade_from_bottom',
+            animation: 'slide_from_right',
+            animationDuration: 200,
             headerShown: false,
+            gestureEnabled: true,
           }}
         >
           <Stack.Screen name="splash" />

@@ -1,12 +1,12 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View, Text, StatusBar, Animated, Dimensions } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { fontScale, Layout, moderateScale } from '@/utils/responsive';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors } from '@/constants/theme';
-import { fontScale, moderateScale, verticalScale, Layout } from '@/utils/responsive';
+import { Stack, useRouter } from 'expo-router';
+import React, { useEffect } from 'react';
+import { Animated, StatusBar, StyleSheet, Text, View } from 'react-native';
 
 const { width, height } = Layout.window;
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/store/authStore';
 
 export default function SplashScreen() {
@@ -31,13 +31,25 @@ export default function SplashScreen() {
     ]).start();
 
     // Check auth and navigate after animation
-    const timer = setTimeout(() => {
-      if (!isLoading) {
+    const checkAuthAndOnboarding = async () => {
+      try {
+        const onboardingCompleted = await AsyncStorage.getItem('onboarding_completed');
+
         if (isAuthenticated) {
           router.replace('/(tabs)');
-        } else {
+        } else if (onboardingCompleted === 'true') {
           router.replace('/login');
+        } else {
+          router.replace('/onboarding');
         }
+      } catch (e) {
+        router.replace('/onboarding');
+      }
+    };
+
+    const timer = setTimeout(() => {
+      if (!isLoading) {
+        checkAuthAndOnboarding();
       }
     }, 2500);
 
@@ -48,7 +60,7 @@ export default function SplashScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="light-content" />
-      
+
       {/* Background Gradient */}
       <LinearGradient
         colors={['#0F172A', '#020617']}
