@@ -34,8 +34,16 @@ export const unstable_settings = {
   anchor: 'splash',
 };
 
+const CustomTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: '#0F172A', // Colors.learnAI.background
+    card: '#0F172A',
+  },
+};
+
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const initializeAuth = useAuthStore((state) => state.initialize);
 
   useEffect(() => {
@@ -53,7 +61,7 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={CustomTheme}>
         <Stack
           initialRouteName="splash"
           screenOptions={{
