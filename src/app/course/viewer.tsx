@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/theme';
+import { useAuthStore } from '@/store/authStore';
 import { useCourseStore } from '@/store/courseStore';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
