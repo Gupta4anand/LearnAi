@@ -69,7 +69,9 @@ LearnAI is a high-performance, premium Learning Management System (LMS) mobile a
 ## 📸 Screenshots
 ![Sign in ](image.png)
 ![Sign up](image-1.png)
-
-
+![Home](image-2.png)
+![Explore](image-3.png)
+![Bookmarks](image-4.png)
+![Profile](image-5.png)
 
 Developed as part of the React Native Expo Developer Assignment.

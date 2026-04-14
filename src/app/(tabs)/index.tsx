@@ -204,16 +204,30 @@ export default function DashboardScreen() {
                   contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 10 }}
                 >
                   {[
-                    { title: "Advanced AI Mastery", tag: "RESUME LEARNING", icon: "play-outline", colors: ['rgba(30, 41, 59, 0.8)', 'rgba(15, 23, 42, 0.9)'], image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=600', isEnrolled: true, progress: 0.75 },
-                    { title: "Deep Learning Bootcamp", tag: "TRENDING", icon: "pulse", colors: ['rgba(74, 110, 219, 0.8)', 'rgba(59, 130, 246, 0.9)'], image: 'https://images.unsplash.com/photo-1620712943543-bcc4628c6731?auto=format&fit=crop&q=80&w=600' },
-                    { title: "AI Business Strategy", tag: "BEST SELLER", icon: "stats-chart", colors: ['rgba(5, 150, 105, 0.8)', 'rgba(16, 185, 129, 0.9)'], image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=600' },
-                    { title: "Neural Networks", tag: "ADVANCED", icon: "hardware-chip", colors: ['rgba(220, 38, 38, 0.8)', 'rgba(239, 68, 68, 0.9)'], image: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&q=80&w=600' }
+                    { id: 'featured-1', title: "Advanced AI Mastery", tag: "RESUME LEARNING", icon: "play-outline", colors: ['rgba(30, 41, 59, 0.8)', 'rgba(15, 23, 42, 0.9)'], image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=600', isEnrolled: true, progress: 0.75 },
+                    { id: 'featured-2', title: "Deep Learning Bootcamp", tag: "TRENDING", icon: "pulse", colors: ['rgba(74, 110, 219, 0.8)', 'rgba(59, 130, 246, 0.9)'], image: 'https://images.unsplash.com/photo-1620712943543-bcc4628c6731?auto=format&fit=crop&q=80&w=600' },
+                    { id: 'featured-3', title: "AI Business Strategy", tag: "BEST SELLER", icon: "stats-chart", colors: ['rgba(5, 150, 105, 0.8)', 'rgba(16, 185, 129, 0.9)'], image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=600' },
+                    { id: 'featured-4', title: "Neural Networks", tag: "ADVANCED", icon: "hardware-chip", colors: ['rgba(220, 38, 38, 0.8)', 'rgba(239, 68, 68, 0.9)'], image: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&q=80&w=600' }
                   ].map((banner, index) => (
                     <TouchableOpacity 
                       key={index} 
                       className="mr-4 overflow-hidden rounded-3xl relative bg-slate-800" 
                       style={{ width: Layout.window.width - 48, height: 160 }} 
                       activeOpacity={0.9}
+                      onPress={() => {
+                        if (banner.isEnrolled) {
+                          router.push({
+                            pathname: '/course/viewer',
+                            params: { 
+                              courseId: banner.id, 
+                              courseTitle: banner.title,
+                              courseDescription: "Continue where you left off in this advanced mastery course."
+                            }
+                          });
+                        } else {
+                          router.push('/courses');
+                        }
+                      }}
                     >
                       <Image 
                         source={{ uri: banner.image }} 
