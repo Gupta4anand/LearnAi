@@ -95,6 +95,7 @@ export default function ProfileScreen() {
     await updateProfile({
       ...user,
       username: displayName.trim() || user.username,
+      fullName: displayName.trim() || user.fullName,
       email: displayEmail.trim() || user.email,
       avatar: avatarUri,
     });
